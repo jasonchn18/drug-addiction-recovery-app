@@ -12,14 +12,27 @@ class _CommunityState extends State<Community> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        backgroundColor: Colors.blue[900],
-        title: Text('Community'),
-        centerTitle: true,
-        elevation: 0.0, // remove drop shadow
-      ), 
-      body: Text('Community Screen'),
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, // align column's children to the left
+          children: <Widget>[
+            TextButton.icon(
+              onPressed: () {}, 
+              icon: Icon(
+                Icons.group_rounded,
+                color: Colors.black,
+              ),
+              label: Text(
+                'Community screen',
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
