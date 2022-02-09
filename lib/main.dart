@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'app.dart';
 import 'package:fyp_app/pages/home.dart';
-import 'package:fyp_app/pages/infohub.dart';
+import 'package:fyp_app/pages/appointment.dart';
 import 'package:fyp_app/pages/achievements.dart';
 import 'package:fyp_app/pages/community.dart';
 import 'package:fyp_app/pages/chat.dart';
@@ -79,7 +79,7 @@ class MyApp extends StatelessWidget {
         '/app': (context) => App(),
         // '/': (context) => Loading(),
         '/home': (context) => Home(),
-        '/infohub': (context) => InfoHub(),
+        '/appointment': (context) => Appointment(),
         '/article': (context) => Article(),
         '/achievements': (context) => Achievements(),
         '/community': (context) => Community(),

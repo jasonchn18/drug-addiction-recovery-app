@@ -1,6 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
-import 'package:fyp_app/pages/infohub.dart';
+import 'package:fyp_app/pages/appointment.dart';
 import 'package:fyp_app/pages/achievements.dart';
 import 'package:fyp_app/pages/home.dart';
 import 'package:fyp_app/pages/community.dart';
@@ -35,8 +35,8 @@ class _AppState extends State<App> {
           onTap: (newIndex) => setState((){_currentIndex = newIndex;}),
           items: [
             BottomNavigationBarItem(
-                icon: Icon(Icons.menu_book_rounded),
-                label: 'Info Hub'
+                icon: Icon(Icons.calendar_today_rounded),
+                label: 'Appointment'
             ),
             BottomNavigationBarItem(
                 icon: Icon(Icons.collections_bookmark_rounded),
@@ -62,7 +62,7 @@ class _AppState extends State<App> {
       body: IndexedStack(
         index: _currentIndex,
         children: <Widget>[
-          InfoHub(),
+          Appointment(),
           Achievements(),
           Home(),
           Community(),

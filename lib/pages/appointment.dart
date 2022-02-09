@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 // import 'dart:async';
 
-class InfoHub extends StatefulWidget {
-  const InfoHub({ Key? key }) : super(key: key);
+class Appointment extends StatefulWidget {
+  const Appointment({ Key? key }) : super(key: key);
 
   @override
-  _InfoHubState createState() => _InfoHubState();
+  _AppointmentState createState() => _AppointmentState();
 }
 
-class _InfoHubState extends State<InfoHub> {
+class _AppointmentState extends State<Appointment> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,11 +22,11 @@ class _InfoHubState extends State<InfoHub> {
             TextButton.icon(
               onPressed: () {}, 
               icon: Icon(
-                Icons.menu_book_rounded,
+                Icons.calendar_today_rounded,
                 color: Colors.black,
               ),
               label: Text(
-                'Info Hub screen',
+                'Appointment screen',
                 style: TextStyle(
                   color: Colors.black,
                 ),
@@ -39,7 +39,7 @@ class _InfoHubState extends State<InfoHub> {
               child: Text(
                 'Sample Article',
                 style: TextStyle(
-                  decoration: TextDecoration.underline,
+                  decoration: TextDecoration.lineThrough,
                   color: Colors.black,
                 ),
               ),
