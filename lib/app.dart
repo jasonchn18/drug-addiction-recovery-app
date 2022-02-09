@@ -14,21 +14,22 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  int _currentIndex = 0;
+  int _currentIndex = 2;  // set initial 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
-        // sets the background color of the `BottomNavigationBar`
-        canvasColor: Color.fromRGBO(4, 98, 126,1.0),
-        // sets the active color of the `BottomNavigationBar` if `Brightness` is light
-        // primaryColor: Colors.red,
-        textTheme: Theme
+          // sets the background color of the `BottomNavigationBar`
+          canvasColor: Color.fromRGBO(4, 98, 126,1.0),
+          // sets the active color of the `BottomNavigationBar` if `Brightness` is light
+          // primaryColor: Colors.red,
+          textTheme: Theme
             .of(context)
             .textTheme
-            .copyWith(caption: TextStyle(color: Colors.yellow))), // sets the inactive color of the `BottomNavigationBar`
+            .copyWith(caption: TextStyle(color: Colors.yellow)) // sets the inactive color of the `BottomNavigationBar`
+        ), 
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (newIndex) => setState((){_currentIndex = newIndex;}),

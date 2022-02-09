@@ -21,7 +21,9 @@ import 'package:fyp_app/pages/chat.dart';
 //   ));
 // }
 
-void main() => runApp(const MyApp());
+void main() {
+  runApp(const MyApp());
+}
 
 // class MyApp extends StatefulWidget {
 //   const MyApp({ Key? key }) : super(key: key);
@@ -83,7 +85,7 @@ class MyApp extends StatelessWidget {
         '/community': (context) => Community(),
         '/chat': (context) => Chat(),
       },
-      debugShowCheckedModeBanner: false,  // to hide debug logo at top right of screen
+      debugShowCheckedModeBanner: false,  // to hide debug logo at top right of screen when debugging
     );
   }
 }

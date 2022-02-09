@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
 
-
 class Home extends StatefulWidget {
   const Home({ Key? key }) : super(key: key);
 
