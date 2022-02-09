@@ -1,11 +1,11 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
 import 'app.dart';
-import 'package:fyp_app/pages/home.dart';
-import 'package:fyp_app/pages/appointment.dart';
-import 'package:fyp_app/pages/achievements.dart';
-import 'package:fyp_app/pages/community.dart';
-import 'package:fyp_app/pages/chat.dart';
+import 'package:fyp_app/screens/home.dart';
+import 'package:fyp_app/screens/appointment.dart';
+import 'package:fyp_app/screens/achievements.dart';
+import 'package:fyp_app/screens/community.dart';
+import 'package:fyp_app/screens/chat.dart';
 
 // void main() {
 //   runApp(MaterialApp(
