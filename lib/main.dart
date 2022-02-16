@@ -1,6 +1,9 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp_app/models/the_user.dart';
+import 'package:fyp_app/services/auth.dart';
+import 'package:provider/provider.dart';
 import 'app.dart';
 import 'wrapper.dart';
 import 'package:fyp_app/screens/home.dart';
@@ -8,6 +11,7 @@ import 'package:fyp_app/screens/appointment.dart';
 import 'package:fyp_app/screens/achievements.dart';
 import 'package:fyp_app/screens/community.dart';
 import 'package:fyp_app/screens/chat.dart';
+import 'package:fyp_app/models/the_user.dart';
 
 // void main() {
 //   runApp(MaterialApp(
@@ -77,22 +81,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      // home: Wrapper(),
-      initialRoute: '/wrapper',
-      // initialRoute: '/app',
-      routes: {
-        '/app': (context) => App(),
-        '/wrapper': (context) => Wrapper(),
-        // '/': (context) => Loading(),
-        '/home': (context) => Home(),
-        '/appointment': (context) => Appointment(),
-        '/article': (context) => Article(),
-        '/achievements': (context) => Achievements(),
-        '/community': (context) => Community(),
-        '/chat': (context) => Chat(),
-      },
-      debugShowCheckedModeBanner: false,  // to hide debug logo at top right of screen when debugging
+    return StreamProvider<TheUser?>.value(
+      value: AuthService().user,
+      initialData: null,
+      child: MaterialApp(
+        // home: Wrapper(),
+        initialRoute: '/wrapper',
+        // initialRoute: '/app',
+        routes: {
+          '/app': (context) => App(),
+          '/wrapper': (context) => Wrapper(),
+          // '/': (context) => Loading(),
+          '/home': (context) => Home(),
+          '/appointment': (context) => Appointment(),
+          '/article': (context) => Article(),
+          '/achievements': (context) => Achievements(),
+          '/community': (context) => Community(),
+          '/chat': (context) => Chat(),
+        },
+        debugShowCheckedModeBanner: false,  // to hide debug logo at top right of screen when debugging
+      ),
     );
   }
 }
