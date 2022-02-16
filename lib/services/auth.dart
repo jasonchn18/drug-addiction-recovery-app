@@ -8,9 +8,16 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // create TheUser object based on Firebase user
-  TheUser? _userFromFirebaseUser(User user) {
+  TheUser? _userFromFirebaseUser(User? user) {
     // return uid from user object if user is not null
     return user != null ? TheUser(uid: user.uid) : null;
+  }
+
+  // auth change user stream
+  Stream<TheUser?> get user {
+    return _auth.authStateChanges()
+    // .map((User? user) => _userFromFirebaseUser(user));
+    .map(_userFromFirebaseUser);  // simplified method
   }
 
   // method to login anonymously (asynchronous task)
