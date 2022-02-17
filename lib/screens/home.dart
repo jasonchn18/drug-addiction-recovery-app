@@ -45,12 +45,15 @@ class _HomeState extends State<Home> {
                 Expanded(
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        await _auth.signOut();
-                      }, 
-                      icon: Icon(Icons.person), 
-                      label: Text('Logout')
+                    child: Padding(
+                      padding: const EdgeInsets.only(right:8.0),
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          await _auth.signOut();
+                        }, 
+                        icon: Icon(Icons.person), 
+                        label: Text('Logout')
+                      ),
                     ),
                   ),
                 ),
