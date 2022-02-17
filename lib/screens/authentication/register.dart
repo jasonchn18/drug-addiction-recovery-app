@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
+import 'package:fyp_app/shared/constants.dart';
 
 class Register extends StatefulWidget {
   // const Register({ Key? key }) : super(key: key);
@@ -62,6 +63,7 @@ class _RegisterState extends State<Register> {
               SizedBox(height: 20.0),
               // Email text field:
               TextFormField(
+                decoration: textInputDecoration.copyWith(hintText: 'Email'),
                 validator: (val) => val!.isEmpty ? 'Enter an email.' : null,
                 onChanged: (val) {  
                   // val represents whatever is in the form field
@@ -72,6 +74,7 @@ class _RegisterState extends State<Register> {
               SizedBox(height: 20.0),
               // Password text field:
               TextFormField(
+                decoration: textInputDecoration.copyWith(hintText: 'Password'),
                 validator: (val) => val!.length < 6 ? 'Enter a password with length of more than 6 characters.' : null,
                 obscureText: true,
                 onChanged: (val) {
