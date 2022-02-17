@@ -1,13 +1,14 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_const_constructors_in_immutables
 import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/shared/constants.dart';
+import 'package:fyp_app/shared/loading.dart';
 
 class Login extends StatefulWidget {
   // const Login({ Key? key }) : super(key: key);
 
   final Function toggleView;
-  Login({ required this.toggleView });  // constructor
+  Login({Key? key,  required this.toggleView }) : super(key: key);  // constructor
 
   @override
   _LoginState createState() => _LoginState();
@@ -17,6 +18,7 @@ class _LoginState extends State<Login> {
 
   final AuthService _auth = AuthService();
   final _formKey = GlobalKey<FormState>();
+  bool loading = false;
 
   // Text field state
   String email = '';
@@ -25,7 +27,7 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return loading ? Loading() : Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(4, 98, 126,1.0),
@@ -83,9 +85,13 @@ class _LoginState extends State<Login> {
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
+                    setState(() => loading = true);
                     dynamic result = await _auth.signInWithEmailAndPassword(email, password);
                     if (result == null) {
-                      setState(() => error = 'Could not sign in with those credentials.');
+                      setState(() {
+                        error = 'Could not sign in with those credentials.';
+                        loading = false;
+                      });
                     }
                     print(email);
                     print(password);
