@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 
 class Login extends StatefulWidget {
-  const Login({ Key? key }) : super(key: key);
+  // const Login({ Key? key }) : super(key: key);
+
+  final Function toggleView;
+  Login({ required this.toggleView });  // constructor
 
   @override
   _LoginState createState() => _LoginState();
@@ -22,9 +25,29 @@ class _LoginState extends State<Login> {
     return Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
       appBar: AppBar(
-        backgroundColor: Colors.brown[400],
+        backgroundColor: Color.fromRGBO(4, 98, 126,1.0),
         elevation: 0.0,
         title: Text('Login to App'),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right:8.0),
+            child: TextButton.icon(
+              onPressed: () {
+                widget.toggleView();
+              }, 
+              icon: Icon(
+                Icons.person_add_alt_1_rounded,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Register',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
@@ -58,7 +81,7 @@ class _LoginState extends State<Login> {
                 child: Text('Login'),
               ),
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.pink[400]),
+                backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
                 textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
               ),
             ),

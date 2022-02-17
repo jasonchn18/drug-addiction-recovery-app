@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 
 class Register extends StatefulWidget {
-  const Register({ Key? key }) : super(key: key);
+  // const Register({ Key? key }) : super(key: key);
+
+  final Function toggleView;
+  Register({ required this.toggleView });  // constructor
 
   @override
   _RegisterState createState() => _RegisterState();
@@ -22,9 +25,30 @@ class _RegisterState extends State<Register> {
     return Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
       appBar: AppBar(
-        backgroundColor: Colors.brown[400],
+        backgroundColor: Color.fromRGBO(4, 98, 126,0.8),
         elevation: 0.0,
         title: Text('Register to App'),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right:8.0),
+            child: TextButton.icon(
+              onPressed: () {
+                // if use this.toggleView, it refer to state object but toggleView is not in the state object
+                widget.toggleView();
+              }, 
+              icon: Icon(
+                Icons.person,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Login',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
@@ -58,7 +82,7 @@ class _RegisterState extends State<Register> {
                 child: Text('Register'),
               ),
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.pink[400]),
+                backgroundColor: MaterialStateProperty.all(Colors.amber[600]),
                 textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
               ),
             ),

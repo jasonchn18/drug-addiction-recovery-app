@@ -11,12 +11,21 @@ class Authenticate extends StatefulWidget {
 }
 
 class _AuthenticateState extends State<Authenticate> {
+
+  bool showSignIn = true;
+  void toggleView() {
+    setState(() => showSignIn = !showSignIn);
+    // reverse the current state of showSignIn
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Register(),
-      // child: Login(),
-    );
+      if (showSignIn) {
+        return Login(toggleView: toggleView);
+      }
+      else {
+        return Register(toggleView: toggleView);
+      }
     // return Scaffold(
     //   backgroundColor: Color.fromRGBO(240,240,235,1.0),
     //   body: SafeArea(
