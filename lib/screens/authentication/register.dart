@@ -2,14 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 
-class Login extends StatefulWidget {
-  const Login({ Key? key }) : super(key: key);
+class Register extends StatefulWidget {
+  const Register({ Key? key }) : super(key: key);
 
   @override
-  _LoginState createState() => _LoginState();
+  _RegisterState createState() => _RegisterState();
 }
 
-class _LoginState extends State<Login> {
+class _RegisterState extends State<Register> {
 
   final AuthService _auth = AuthService();
 
@@ -24,7 +24,7 @@ class _LoginState extends State<Login> {
       appBar: AppBar(
         backgroundColor: Colors.brown[400],
         elevation: 0.0,
-        title: Text('Login to App'),
+        title: Text('Register to App'),
       ),
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
@@ -55,7 +55,7 @@ class _LoginState extends State<Login> {
               }, 
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text('Login'),
+                child: Text('Register'),
               ),
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(Colors.pink[400]),
@@ -63,20 +63,7 @@ class _LoginState extends State<Login> {
               ),
             ),
           ],
-          )
-        // child: ElevatedButton(
-        //   child: Text('Login Anon'),
-        //   onPressed: () async { //async task to login
-        //     dynamic result = await _auth.signInAnon();
-        //     // it will try to sign in, wait to resolve and pass back to result
-        //     if (result == null) {
-        //       print('error signing in');
-        //     } else {
-        //       print('signed in');
-        //       print(result.uid);
-        //     }
-        //   },
-        // ),
+        )
       )
     );
   }
