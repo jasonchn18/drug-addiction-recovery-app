@@ -10,7 +10,7 @@ class Loading extends StatelessWidget {
     return Container(
       color: Color.fromRGBO(240,240,235,1.0),
       child: Center(
-        child: SpinKitSquareCircle(
+        child: SpinKitDoubleBounce(
           color: Color.fromRGBO(4, 98, 126,1.0),
           size: 50.0,
           )

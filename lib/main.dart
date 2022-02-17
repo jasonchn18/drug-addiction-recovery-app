@@ -11,7 +11,6 @@ import 'package:fyp_app/screens/appointment.dart';
 import 'package:fyp_app/screens/achievements.dart';
 import 'package:fyp_app/screens/community.dart';
 import 'package:fyp_app/screens/chat.dart';
-import 'package:fyp_app/models/the_user.dart';
 
 // void main() {
 //   runApp(MaterialApp(
