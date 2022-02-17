@@ -1,6 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
-import 'package:fyp_app/screens/home.dart';
+import 'package:fyp_app/app.dart';
 import 'package:fyp_app/screens/authentication/authenticate.dart';
 import 'package:provider/provider.dart';
 import 'package:fyp_app/models/the_user.dart';
@@ -12,9 +12,14 @@ class Wrapper extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final user = Provider.of<TheUser?>(context);
-    print(user);
+    // print(user);
 
     // return either Home or Authentication widget
-    return Authenticate();
+    if (user == null) {
+      return Authenticate();
+    }
+    else {
+      return App();
+    }
   }
 }
