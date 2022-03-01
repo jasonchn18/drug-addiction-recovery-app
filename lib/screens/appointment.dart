@@ -150,7 +150,7 @@ class _AppointmentState extends State<Appointment> {
         return 'Choose your Therapist';
 
       case 2:
-        return 'Choose your Time Slot';
+        return 'Choose a Time Slot';
 
       default:
         return 'Book an Appointment';

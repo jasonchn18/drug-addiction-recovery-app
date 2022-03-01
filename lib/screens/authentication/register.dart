@@ -21,6 +21,7 @@ class _RegisterState extends State<Register> {
   bool loading = false;
 
   // Text field state
+  String displayName = '';
   String email = '';
   String password = '';
   String error = '';
@@ -56,65 +57,78 @@ class _RegisterState extends State<Register> {
         ],
       ),
       body: Container(
-        padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 50.0),
+        padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
         child: Form(
           key: _formKey,  // associating the GlobalKey with our form
           // to keep track of the state of the form and access validation techniques
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 20.0),
-              // Email text field:
-              TextFormField(
-                decoration: textInputDecoration.copyWith(hintText: 'Email'),
-                validator: (val) => val!.isEmpty ? 'Enter an email.' : null,
-                onChanged: (val) {  
-                  // val represents whatever is in the form field
-                  // onChanged means everytime something is typed or deleted from the form field
-                  setState(() => email = val);
-                },
-              ),
-              SizedBox(height: 20.0),
-              // Password text field:
-              TextFormField(
-                decoration: textInputDecoration.copyWith(hintText: 'Password'),
-                validator: (val) => val!.length < 6 ? 'Enter a password with length of more than 6 characters.' : null,
-                obscureText: true,
-                onChanged: (val) {
-                  setState(() => password = val);
-                },
-              ),
-              SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    // if receive null value only continue
-                    setState(() => loading = true);
-                    dynamic result = await _auth.registerWithEmailAndPassword(email, password);
-                    if (result == null) {
-                      setState(() {
-                        error = 'Please supply a valid email.';
-                        loading = false;
-                      });
+          child: SingleChildScrollView(   // to fix renderflex error when keyboard opens
+            child: Column(
+              children: <Widget>[
+                SizedBox(height: 20.0),
+                // Display Name text field:
+                TextFormField(
+                  decoration: textInputDecoration.copyWith(hintText: 'Display Name'),
+                  validator: (val) => val!.isEmpty ? 'Enter a Display Name.' : null,
+                  onChanged: (val) {  
+                    // val represents whatever is in the form field
+                    // onChanged means everytime something is typed or deleted from the form field
+                    setState(() => displayName = val);
+                  },
+                ),
+                SizedBox(height: 20.0),
+                // Email text field:
+                TextFormField(
+                  decoration: textInputDecoration.copyWith(hintText: 'Email'),
+                  validator: (val) => val!.isEmpty ? 'Enter an email.' : null,
+                  onChanged: (val) {  
+                    // val represents whatever is in the form field
+                    // onChanged means everytime something is typed or deleted from the form field
+                    setState(() => email = val);
+                  },
+                ),
+                SizedBox(height: 20.0),
+                // Password text field:
+                TextFormField(
+                  decoration: textInputDecoration.copyWith(hintText: 'Password'),
+                  validator: (val) => val!.length < 6 ? 'Enter a password with length of more than 6 characters.' : null,
+                  obscureText: true,
+                  onChanged: (val) {
+                    setState(() => password = val);
+                  },
+                ),
+                SizedBox(height: 20.0),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      // if receive null value only continue
+                      setState(() => loading = true);
+                      dynamic result = await _auth.registerWithEmailAndPassword(displayName, email, password);
+                      if (result == null) {
+                        setState(() {
+                          error = 'Please supply a valid email.';
+                          loading = false;
+                        });
+                      }
+                      print(email);
+                      print(password);
                     }
-                    print(email);
-                    print(password);
-                  }
-                }, 
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('Register'),
+                  }, 
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Register'),
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.amber[600]),
+                    textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                  ),
                 ),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.amber[600]),
-                  textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                SizedBox(height: 12.0),
+                Text(
+                  error,
+                  style: TextStyle(color: Colors.red, fontSize:14.0),
                 ),
-              ),
-              SizedBox(height: 12.0),
-              Text(
-                error,
-                style: TextStyle(color: Colors.red, fontSize:14.0),
-              ),
-            ],
+              ],
+            ),
           ),
         )
       )

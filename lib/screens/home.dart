@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/services/database.dart';
 import 'package:provider/provider.dart';
-import 'package:fyp_app/screens/brew_list.dart';
+import 'package:fyp_app/screens/user_list.dart';
 
 class Home extends StatefulWidget {
   const Home({ Key? key }) : super(key: key);
@@ -20,14 +20,14 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return StreamProvider<QuerySnapshot?>.value(
-      value: DatabaseService(uid:'').brews,
+      value: DatabaseService(uid:'').users,
       initialData: null,
       child: Scaffold(
         backgroundColor: Color.fromRGBO(240,240,235,1.0),
         body: SafeArea(
           child: Column(
             children: <Widget>[
-              BrewList(),
+              UserList(),
               Row(
                 children: <Widget>[
                   Expanded(
