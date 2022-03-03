@@ -16,9 +16,9 @@ class _AppointmentState extends State<Appointment> {
   int upperBound = 2;
 
   void _prevButtonAction() {
-      setState(() {
-        activeStep--;
-      });
+    setState(() {
+      activeStep--;
+    });
   }
 
   @override
@@ -83,9 +83,13 @@ class _AppointmentState extends State<Appointment> {
                               });
                             }
                           },
-                          child: activeStep < upperBound ? Text('Next') : Text('Submit'),
+                          child: Text(
+                            buttonText(),
+                          ),
+                          // child: activeStep < upperBound ? Text('Next') : Text('Submit'),
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.7)),
+                            backgroundColor: activeStep < upperBound ?
+                              MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.7)) : MaterialStateProperty.all<Color>(Colors.teal.shade600),
                           ),
                         ),
                       ),
@@ -161,21 +165,7 @@ class _AppointmentState extends State<Appointment> {
   Widget body() {
     switch (activeStep) {
       case 1:
-        return Scaffold(
-          backgroundColor: Color.fromRGBO(240,240,235,1.0),
-          body: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'List out therapists',
-                style: TextStyle(
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-        );
-
+        return chooseTherapist();
       case 2:
         return Scaffold(
           backgroundColor: Color.fromRGBO(240,240,235,1.0),
@@ -195,19 +185,81 @@ class _AppointmentState extends State<Appointment> {
       default:
         return Scaffold(
           backgroundColor: Color.fromRGBO(240,240,235,1.0),
-          body: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Introductory Text',
-                style: TextStyle(
-                  fontSize: 15,
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(15,5,15,5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'To book an appointment with a therapist, \nall you have to do is pick the therapist of your choice and choose any time slots that are available!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
     }
+  }
+
+  // Returns the header text based on the activeStep.
+  String buttonText() {
+    if (activeStep == 0) {
+      return "Start";
+    }
+    else if (activeStep < upperBound) {
+      return "Next";
+    }
+    return "Submit";
+  }
+
+  // Returns the Choose Therapist widget
+  Widget chooseTherapist() {
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            'List out therapists',
+            style: TextStyle(
+              fontSize: 15,
+            ),
+          ),
+          Center(
+            child: Card(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const ListTile(
+                    leading: Icon(Icons.album),
+                    title: Text('The Enchanted Nightingale'),
+                    subtitle: Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      TextButton(
+                        child: const Text('BUY TICKETS'),
+                        onPressed: () {/* ... */},
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        child: const Text('LISTEN'),
+                        onPressed: () {/* ... */},
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
 }

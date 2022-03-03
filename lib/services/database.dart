@@ -12,11 +12,12 @@ class DatabaseService {
     return await userCollection.doc(uid).set({
       'displayName': displayName,
       'email': email,
-      'type': type, // P-Patient or T-Therapist
+      'type': type,   // P-Patient or T-Therapist
+      'sober_days': null,
     });
   }
 
-  // get brews stream
+  // get users stream
   Stream<QuerySnapshot> get users {
     return userCollection.snapshots();
   }

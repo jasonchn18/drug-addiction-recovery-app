@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:fyp_app/models/the_user.dart';
 
 class UserList extends StatefulWidget {
   const UserList({ Key? key }) : super(key: key);
@@ -13,7 +13,7 @@ class _UserListState extends State<UserList> {
   @override
   Widget build(BuildContext context) {
 
-    final users = Provider.of<QuerySnapshot?>(context);
+    final users = Provider.of<List<TheUser>?>(context);
     // print(brews.docs);
     if (users != null) {
       // for (var doc in users.docs) {

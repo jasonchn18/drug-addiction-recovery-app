@@ -14,11 +14,14 @@ class Register extends StatefulWidget {
   _RegisterState createState() => _RegisterState();
 }
 
+enum UserType { patient, therapist }
 class _RegisterState extends State<Register> {
 
   final AuthService _auth = AuthService();
   final _formKey = GlobalKey<FormState>();
   bool loading = false;
+
+  UserType? _type = UserType.patient;
 
   // Text field state
   String displayName = '';
@@ -64,11 +67,39 @@ class _RegisterState extends State<Register> {
           child: SingleChildScrollView(   // to fix renderflex error when keyboard opens
             child: Column(
               children: <Widget>[
+                // Type of User radio buttons
+                Row(
+                  children: <Widget>[
+                    Radio<UserType>(
+                      activeColor: Colors.amber[700],
+                      value: UserType.patient,
+                      groupValue: _type,
+                      onChanged: (UserType? value) {
+                        setState(() {
+                          _type = value;
+                        });
+                      },
+                    ),
+                    Text('Patient'),
+                    SizedBox(width: 30.0),
+                    Radio<UserType>(
+                      activeColor: Colors.amber[700],
+                      value: UserType.therapist,
+                      groupValue: _type,
+                      onChanged: (UserType? value) {
+                        setState(() {
+                          _type = value;
+                        });
+                      },
+                    ),
+                    Text('Therapist'),
+                  ],
+                ),
                 SizedBox(height: 20.0),
                 // Display Name text field:
                 TextFormField(
                   decoration: textInputDecoration.copyWith(hintText: 'Display Name'),
-                  validator: (val) => val!.isEmpty ? 'Enter a Display Name.' : null,
+                  validator: (val) => val!.isEmpty ? 'Enter a display name.' : null,
                   onChanged: (val) {  
                     // val represents whatever is in the form field
                     // onChanged means everytime something is typed or deleted from the form field
@@ -97,18 +128,30 @@ class _RegisterState extends State<Register> {
                   },
                 ),
                 SizedBox(height: 20.0),
+                SizedBox(height: 20.0),
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       // if receive null value only continue
                       setState(() => loading = true);
-                      dynamic result = await _auth.registerWithEmailAndPassword(displayName, email, password);
+
+                      String _usertype = '';
+                      if (_type == UserType.patient) {
+                        _usertype = "P";
+                      }
+                      else if (_type == UserType.therapist) {
+                        _usertype = "T";
+                      }
+
+                      dynamic result = await _auth.registerWithEmailAndPassword(displayName, email, password, _usertype);
+
                       if (result == null) {
                         setState(() {
                           error = 'Please supply a valid email.';
                           loading = false;
                         });
                       }
+
                       print(email);
                       print(password);
                     }

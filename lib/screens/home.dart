@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/services/database.dart';
 import 'package:provider/provider.dart';
-import 'package:fyp_app/screens/user_list.dart';
+import 'package:fyp_app/user_list.dart';
 
 class Home extends StatefulWidget {
   const Home({ Key? key }) : super(key: key);
