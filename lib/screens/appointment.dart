@@ -1,4 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:im_stepper/stepper.dart';
@@ -14,11 +16,25 @@ class Appointment extends StatefulWidget {
 class _AppointmentState extends State<Appointment> {
   int activeStep = 0;
   int upperBound = 2;
+  
+  List<DocumentSnapshot> _therapists = [];
+  String _chosenTherapistDisplayName = "";
+  String _chosenTherapistEmail = "";
+
+  Stream<DocumentSnapshot> snapshot =  FirebaseFirestore.instance.collection("users").doc('qDRHNNU6sxOCPNXFpvbGmdMqm3w1').snapshots();
 
   void _prevButtonAction() {
     setState(() {
       activeStep--;
     });
+  }
+
+  void _nextButtonAction() {
+    if (activeStep == 0) {
+      setState(() {
+        activeStep++;
+      });
+    }
   }
 
   @override
@@ -76,17 +92,10 @@ class _AppointmentState extends State<Appointment> {
                       SizedBox(width: 50),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (activeStep < upperBound) {
-                              setState(() {
-                                activeStep++;
-                              });
-                            }
-                          },
+                          onPressed: activeStep != 1 ? ()=>_nextButtonAction() : null,
                           child: Text(
                             buttonText(),
                           ),
-                          // child: activeStep < upperBound ? Text('Next') : Text('Submit'),
                           style: ButtonStyle(
                             backgroundColor: activeStep < upperBound ?
                               MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.7)) : MaterialStateProperty.all<Color>(Colors.teal.shade600),
@@ -165,7 +174,8 @@ class _AppointmentState extends State<Appointment> {
   Widget body() {
     switch (activeStep) {
       case 1:
-        return chooseTherapist();
+        getTherapists();
+        return therapistList(_therapists);
       case 2:
         return Scaffold(
           backgroundColor: Color.fromRGBO(240,240,235,1.0),
@@ -173,7 +183,7 @@ class _AppointmentState extends State<Appointment> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'List out available time slots',
+                'Chosen therapist: $_chosenTherapistDisplayName $_chosenTherapistEmail',
                 style: TextStyle(
                   fontSize: 15,
                 ),
@@ -209,59 +219,81 @@ class _AppointmentState extends State<Appointment> {
     if (activeStep == 0) {
       return "Start";
     }
-    else if (activeStep < upperBound) {
-      return "Next";
+    else {
+      return "Submit";
     }
-    return "Submit";
   }
 
   // Returns the Choose Therapist widget
-  Widget chooseTherapist() {
+  Widget therapistList(List<DocumentSnapshot> therapists) {
+    List<Widget> list = <Widget>[];
+    for (var data in therapists) {
+      list.add(Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(
+                  Icons.person_outline_rounded,
+                  color: Colors.black54,
+                  size: 30,
+                ),
+                title: Text(
+                  "Dr. " + data.get('displayName'),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                trailing: IconButton(
+                  icon: Icon(
+                    CupertinoIcons.arrow_right_circle_fill,
+                    color: Color.fromRGBO(4, 98, 126,0.8),
+                  ),
+                  onPressed: () { 
+                    _chosenTherapistDisplayName = data.get('displayName');
+                    _chosenTherapistEmail = data.get('email');
+                    activeStep++; 
+                  }
+                ), 
+              ),
+            ],
+          ),
+        ),
+      ));
+    }
+    // int num = therapists.length;
+    // return Text('la $num');
     return Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            'List out therapists',
-            style: TextStyle(
-              fontSize: 15,
-            ),
-          ),
-          Center(
-            child: Card(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const ListTile(
-                    leading: Icon(Icons.album),
-                    title: Text('The Enchanted Nightingale'),
-                    subtitle: Text('Music by Julie Gable. Lyrics by Sidney Stein.'),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
-                      TextButton(
-                        child: const Text('BUY TICKETS'),
-                        onPressed: () {/* ... */},
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        child: const Text('LISTEN'),
-                        onPressed: () {/* ... */},
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: list,
+        ),
       ),
     );
   }
 
+  Future<List<DocumentSnapshot>> getTherapists() async {
+    List<DocumentSnapshot> docs = [];
+    
+    await FirebaseFirestore.instance.collection('users')
+    .where("type",isEqualTo: "T")
+    .get().then((query) {
+        docs = query.docs;
+    });
+
+    setState(() {
+      _therapists = docs;
+    });
+
+    return docs;
+  }
+  
 }
 
 class Article extends StatelessWidget {
