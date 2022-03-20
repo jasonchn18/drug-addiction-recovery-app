@@ -50,7 +50,10 @@ class AuthService {
   // method to register with email and password
   Future registerWithEmailAndPassword(String displayName, String email, String password, String type) async {
     try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password).then((user){
+        user.user!.updateDisplayName(displayName);
+        return user;
+      });
       User? user = result.user;
 
       // create a new document for the user with the uid

@@ -1,12 +1,19 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:fyp_app/models/time_slot_model.dart';
+import 'package:fyp_app/models/user_model.dart';
+import 'package:fyp_app/services/time_slot_services.dart';
+import 'package:fyp_app/services/user_services.dart';
 import 'package:im_stepper/stepper.dart';
 // import 'dart:async';
 
+// enum userType { patient, therapist }
+// FirebaseAuth auth = FirebaseAuth.instance;
+// User? _user = auth.currentUser;
 class Appointment extends StatefulWidget {
   const Appointment({ Key? key }) : super(key: key);
 
@@ -15,17 +22,28 @@ class Appointment extends StatefulWidget {
 }
 
 class _AppointmentState extends State<Appointment> {
+  UserModel _currentUser = UserModel();
+  // userType _currentUserType = userType.patient;
+  // final String? _currentUserEmail = _user!.email;
+  bool _hasAppointment = false;
+
   int activeStep = 0;
   int upperBound = 2;
   
-  List<DocumentSnapshot> _therapists = [];
-  List<DocumentSnapshot> _time_slots = [];
+  // List<DocumentSnapshot> _therapists = [];
+  List<UserModel> _therapistList = [];
+  // List<DocumentSnapshot> _timeSlots = [];
+  List<TimeSlotModel> _timeSlotList = [];
+  List<TimeSlotModel> _appointmentList = [];
+  List<String> _displayNameList = [];
+  // List<DocumentSnapshot> _patientAppointment = []; //An appointment booked by a patient
+  // List<DocumentSnapshot> _therapistAppointments = []; //Appointments booked for a therapist
   String _chosenTherapistDisplayName = "";
   String _chosenTherapistEmail = "";
   String _chosenTimeSlotDay = "";
   int _chosenTimeSlotTime = 0;
 
-  Stream<DocumentSnapshot> snapshot =  FirebaseFirestore.instance.collection("users").doc('qDRHNNU6sxOCPNXFpvbGmdMqm3w1').snapshots();
+  // Stream<DocumentSnapshot> snapshot =  FirebaseFirestore.instance.collection("users").doc('qDRHNNU6sxOCPNXFpvbGmdMqm3w1').snapshots();
 
   void _prevButtonAction() {
     setState(() {
@@ -39,76 +57,26 @@ class _AppointmentState extends State<Appointment> {
     });
   }
 
+  Future getCurrentUserData() async {
+    UserModel user = await UserService().getCurrentUserData();
+    if(mounted){
+      setState(() {
+        _currentUser = user;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: Color.fromRGBO(240,240,235,1.0),
-        body: Column(
-          children: [
-            SizedBox(height: 10),
-            NumberStepper(
-              activeStep: activeStep,  // this is the default actually
-              numbers: [1,2,3],
-              direction: Axis.horizontal,
-              enableNextPreviousButtons: false,
-              enableStepTapping: false,
-              stepColor: Color.fromRGBO(134,148,133,1),
-              activeStepColor: Color.fromRGBO(4, 98, 126,1.0),
-              numberStyle: TextStyle(color: Colors.white),
-              onStepReached:(index) {
-                setState(() {
-                  activeStep = index;
-                });
-              },
-            ),
-            SizedBox(height: 20),
-            header(),
-            Expanded(
-              flex: 6,
-              child: Padding(
-                padding: EdgeInsets.all(15),
-                child: body(),
-              ),
-            ),
-            Expanded(
-              flex: 1,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: SizedBox(),
-                        flex: 10,
-                      ),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
-                          child: Text(buttonText()),
-                          style: ButtonStyle(
-                            backgroundColor: activeStep == 0 ?
-                              MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
-                          ),
-                        ),
-                        flex: 11,
-                      ),
-                      Expanded(
-                        child: SizedBox(),
-                        flex: 10,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    getCurrentUserData();
+    getAppointmentList();
+    getDisplayNameFromEmail(_appointmentList);
+    if(_currentUser.type == 'P') {
+      return outputForPatient();
+    }
+    else {  //_currentUser.type == 'T'
+      return outputForTherapist();
+    }
   }
 
   // Returns the header wrapping the header text.
@@ -123,7 +91,7 @@ class _AppointmentState extends State<Appointment> {
           flex: 9,
           child: Container(
             decoration: BoxDecoration(
-              color: Color.fromRGBO(107,180,186,0.5),
+              color: Color.fromRGBO(107,180,186,0.6),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -155,15 +123,25 @@ class _AppointmentState extends State<Appointment> {
 
   // Returns the header text based on the activeStep.
   String headerText() {
-    switch (activeStep) {
-      case 1:
-        return 'Choose your Therapist';
+    if(_currentUser.type == 'P') {
+      if(_appointmentList.isNotEmpty) {
+        return 'Your Appointment:';
+      }
+      else {  //_appointmentList.isEmpty
+        switch (activeStep) {
+          case 1:
+            return 'Choose your Therapist';
 
-      case 2:
-        return 'Choose a Time Slot';
+          case 2:
+            return 'Choose a Time Slot';
 
-      default:
-        return 'Book an Appointment';
+          default:
+            return 'Book an Appointment';
+        }
+      }
+    }
+    else {  //_currentUser.type == 'T'
+      return 'Your Appointment(s):';
     }
   }
 
@@ -172,24 +150,10 @@ class _AppointmentState extends State<Appointment> {
     switch (activeStep) {
       case 1:
         getTherapists();
-        return therapistList(_therapists);
+        return therapistList(_therapistList);
       case 2:
         getTimeSlots();
-        return timeSlotList(_time_slots);
-        // return Scaffold(
-        //   backgroundColor: Color.fromRGBO(240,240,235,1.0),
-        //   body: Row(
-        //     mainAxisAlignment: MainAxisAlignment.center,
-        //     children: [
-        //       Text(
-        //         'Chosen therapist: $_chosenTherapistDisplayName $_chosenTherapistEmail',
-        //         style: TextStyle(
-        //           fontSize: 15,
-        //         ),
-        //       ),
-        //     ],
-        //   ),
-        // );
+        return timeSlotList(_timeSlotList);
 
       default:
         return Scaffold(
@@ -223,8 +187,150 @@ class _AppointmentState extends State<Appointment> {
     }
   }
 
+  Widget outputForPatient() {
+    if(_appointmentList.isNotEmpty) {
+      return SafeArea(
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: Color.fromRGBO(240,240,235,1.0),
+          body: Column(
+            children: [
+              SizedBox(height: 25),
+              header(),
+              Expanded(
+                // flex: 6,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(5, 15, 5, 15),
+                  child: patientAppointmentList(_appointmentList),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    else {  //_hasAppointment == false
+      return SafeArea(
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: Color.fromRGBO(240,240,235,1.0),
+          body: Column(
+            children: [
+              SizedBox(height: 10),
+              NumberStepper(
+                activeStep: activeStep,  // this is the default actually
+                numbers: [1,2,3],
+                direction: Axis.horizontal,
+                enableNextPreviousButtons: false,
+                enableStepTapping: false,
+                stepColor: Color.fromRGBO(134,148,133,1),
+                activeStepColor: Color.fromRGBO(4, 98, 126,1.0),
+                numberStyle: TextStyle(color: Colors.white),
+                onStepReached:(index) {
+                  setState(() {
+                    activeStep = index;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              header(),
+              Expanded(
+                flex: 6,
+                child: Padding(
+                  padding: EdgeInsets.all(15),
+                  child: body(),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: SizedBox(),
+                          flex: 10,
+                        ),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
+                            child: Text(buttonText()),
+                            style: ButtonStyle(
+                              backgroundColor: activeStep == 0 ?
+                                MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+                            ),
+                          ),
+                          flex: 11,
+                        ),
+                        Expanded(
+                          child: SizedBox(),
+                          flex: 10,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget outputForTherapist() {
+    return SafeArea(
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        body: Column(
+          children: [
+            SizedBox(height: 25),
+            header(),
+            Expanded(
+              // flex: 6,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(5, 15, 5, 15),
+                child: therapistAppointmentList(_appointmentList),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future getTherapists() async {
+    // List<DocumentSnapshot> docs = [];
+    
+    // await FirebaseFirestore.instance.collection('users')
+    // .where("type",isEqualTo: "T")
+    // .orderBy("displayName")
+    // .get().then((query) {
+    //     docs = query.docs;
+    // });
+    // // query.docs is a list
+
+    // if(mounted){
+    //   setState(() {
+    //     _therapists = docs;
+    //   });
+    // }
+
+    List<UserModel> therapistList = await UserService().getAllTherapists();
+    
+    if(mounted){
+      setState(() {
+        _therapistList = therapistList;
+      });
+    }
+  }
+
   // Returns the Therapist List widget
-  Widget therapistList(List<DocumentSnapshot> therapists) {
+  Widget therapistList(List<UserModel> therapists) {
     List<Widget> list = <Widget>[];
     for (var data in therapists) {
       list.add(Card(
@@ -242,22 +348,28 @@ class _AppointmentState extends State<Appointment> {
                   size: 30,
                 ),
                 title: Text(
-                  "Dr. " + data.get('displayName'),
+                  "Dr. " + data.displayName!,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                trailing: IconButton(
-                  icon: Icon(
-                    CupertinoIcons.arrow_right_circle_fill,
-                    color: Color.fromRGBO(4, 98, 126,0.8),
-                  ),
-                  onPressed: () { 
-                    _chosenTherapistDisplayName = data.get('displayName');
-                    _chosenTherapistEmail = data.get('email');
-                    activeStep++; 
-                  }
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        CupertinoIcons.arrow_right_circle_fill,
+                        color: Color.fromRGBO(4, 98, 126,0.8),
+                        size: 30,
+                      ),
+                      onPressed: () { 
+                        _chosenTherapistDisplayName = data.displayName!;
+                        _chosenTherapistEmail = data.email!;
+                        activeStep++; 
+                      }
+                    ),
+                  ],
                 ), 
               ),
             ],
@@ -278,24 +390,36 @@ class _AppointmentState extends State<Appointment> {
       ),
     );
   }
-
-  Future getTherapists() async {
-    List<DocumentSnapshot> docs = [];
+  
+  Future getTimeSlots() async {
+    // List<DocumentSnapshot> docs = [];
     
-    await FirebaseFirestore.instance.collection('users')
-    .where("type",isEqualTo: "T")
-    .orderBy("displayName")
-    .get().then((query) {
-        docs = query.docs;
-    });
+    // await FirebaseFirestore.instance.collection('time_slots')
+    // .where("therapist_email",isEqualTo: _chosenTherapistEmail)
+    // .where("availability",isEqualTo: true)
+    // .orderBy("day")
+    // .orderBy("time")
+    // .get().then((query) {
+    //   docs = query.docs;
+    // });
 
-    setState(() {
-      _therapists = docs;
-    });
+    // if (mounted) {
+    //   setState(() {
+    //     _timeSlots = docs;
+    //   });
+    // }
+
+    List<TimeSlotModel> timeSlotList = await TimeSlotService().getAvailableTimeSlots(_chosenTherapistEmail);
+    
+    if(mounted){
+      setState(() {
+        _timeSlotList = timeSlotList;
+      });
+    }
   }
 
   // Returns the Therapist List widget
-  Widget timeSlotList(List<DocumentSnapshot> time_slots) {
+  Widget timeSlotList(List<TimeSlotModel> timeSlots) {
     List<Widget> list = <Widget>[];
 
     list.add(Center(
@@ -313,88 +437,8 @@ class _AppointmentState extends State<Appointment> {
       ),
     ));
     
-    for (var data in time_slots) {
-      // int start_time = data.get('time');  //1000
-      // int end_time = start_time + 0200;   //1200
-      // String time = start_time.toString() + " - " + end_time.toString();
-      String startTime = "";
-      String endTime = "";
-      String hour = "";
-      String minute = "";
-      String amPm = "am";
-
-      // Time formatting
-      if (data.get('time') < 1300) {
-        if (data.get('time') >= 1200) {
-          amPm = "pm";
-        }
-        startTime = (data.get('time')).toString();
-        if(startTime.length == 3) {
-          startTime = "0" + startTime;
-        }
-        if (startTime[0] == "0") {
-          hour = startTime.substring(1,2);
-        }
-        else {
-          hour = startTime.substring(0,2);
-        }
-        minute = startTime.substring(2,4);
-        startTime = hour + "." + minute + amPm;
-      }
-      if ( (data.get('time') + 0200) < 1300 ) {
-        if (data.get('time') + 0200 >= 1200) {
-          amPm = "pm";
-        }
-        endTime = (data.get('time') + 0200).toString();
-        if(endTime.length == 3) {
-          endTime = "0" + endTime;
-        }
-        if (endTime[0] == "0") {
-          hour = endTime.substring(1,2);
-        }
-        else {
-          hour = endTime.substring(0,2);
-        }
-        minute = endTime.substring(2,4);
-        endTime = hour + "." + minute + amPm;
-      }
-
-      if (data.get('time') >= 1300) {
-        if (data.get('time') >= 1200) {
-          amPm = "pm";
-        }
-        startTime = (data.get('time') - 1200).toString();
-        if(startTime.length == 3) {
-          startTime = "0" + startTime;
-        }
-        if (startTime[0] == "0") {
-          hour = startTime.substring(1,2);
-        }
-        else {
-          hour = startTime.substring(0,2);
-        }
-        minute = startTime.substring(2,4);
-        startTime = hour + "." + minute + amPm;
-      }
-      if ( (data.get('time') + 0200) >= 1300 ) {
-        if (data.get('time') + 0200 >= 1200) {
-          amPm = "pm";
-        }
-        endTime = (data.get('time') - 1200 + 0200).toString();
-        if(endTime.length == 3) {
-          endTime = "0" + endTime;
-        }
-        if (endTime[0] == "0") {
-          hour = endTime.substring(1,2);
-        }
-        else {
-          hour = endTime.substring(0,2);
-        }
-        minute = endTime.substring(2,4);
-        endTime = hour + "." + minute + amPm;
-      }
-
-      String time = startTime + " - " + endTime;
+    for (var data in timeSlots) {
+      String time = timeFormatting(data.time);
 
       list.add(Card(
         child: Padding(
@@ -404,7 +448,7 @@ class _AppointmentState extends State<Appointment> {
             children: <Widget>[
               ListTile(
                 title: Text(
-                  data.get('day').substring(2),
+                  data.day!.substring(2),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -419,9 +463,50 @@ class _AppointmentState extends State<Appointment> {
                 ),
                 trailing: ElevatedButton(
                   onPressed: () {
-                    _chosenTimeSlotDay = data.get('day');
-                    _chosenTimeSlotTime = data.get('time');
-                    setTimeSlots();
+                    _chosenTimeSlotDay = data.day!;
+                    _chosenTimeSlotTime = data.time!;
+                    // bookTimeSlots();
+                    showDialog<String>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Icon(
+                          Icons.check_circle_rounded,
+                          size: 50,
+                          color: Colors.green.shade600,
+                        ),
+                        content: Text(
+                          'Are you sure you want to book this time slot?',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'Cancel'),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, 'Confirm');
+                              bookTimeSlots();
+                            },
+                            child: Text(
+                              'Confirm',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }, 
                   child: Text('Select'),
                   style: ButtonStyle(
@@ -448,63 +533,426 @@ class _AppointmentState extends State<Appointment> {
     );
   }
   
-  Future getTimeSlots() async {
-    List<DocumentSnapshot> docs = [];
-    
-    await FirebaseFirestore.instance.collection('time_slots')
-    .where("therapist_email",isEqualTo: _chosenTherapistEmail)
-    .where("availability",isEqualTo: true)
-    .orderBy("day")
-    .orderBy("time")
-    .get().then((query) {
-      docs = query.docs;
-    });
+  Future bookTimeSlots() async {
+    // QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('time_slots')
+    //   .where('therapist_email', isEqualTo: _chosenTherapistEmail)
+    //   .where('day', isEqualTo: _chosenTimeSlotDay)
+    //   .where('time', isEqualTo: _chosenTimeSlotTime)
+    //   .get();
+    // QueryDocumentSnapshot doc = querySnap.docs[0];  // Assumption: the query returns only one document, THE doc you are looking for.
+    // DocumentReference docRef = doc.reference;
+    // await docRef.update({
+    //   'availability': false,
+    //   'booked_by': _currentUser.email,
+    // });
 
+    await TimeSlotService().bookTimeSlot(_chosenTherapistEmail, _chosenTimeSlotDay, _chosenTimeSlotTime);
+  }
+
+  Future getAppointmentList() async {
+    // List<DocumentSnapshot> docs = [];
+    
+    // await FirebaseFirestore.instance.collection('time_slots')
+    // .where("availability",isEqualTo: false)
+    // .where("booked_by",isEqualTo: _currentUser.email)
+    // .get().then((query) {
+    //   docs = query.docs;
+    //   if(docs.isEmpty) {
+    //     if (mounted) {
+    //       setState(() {
+    //         _hasAppointment = false;
+    //       });
+    //     }
+    //   }
+    //   else {
+    //     if (mounted) {
+    //       setState(() {
+    //         _hasAppointment = true;
+    //       });
+    //     }
+    //   }
+    // });
+
+    List<TimeSlotModel> appointmentList = [];
+    appointmentList = await TimeSlotService().getAppointmentList(_currentUser.type);
+    
     if (mounted) {
       setState(() {
-        _time_slots = docs;
+        _appointmentList = appointmentList;
       });
     }
   }
-  
-  Future setTimeSlots() async {
-    // var db = FirebaseFirestore.instance;
 
-    // db.collection("time_slots").doc(doc.id).update({foo: "bar"});
+  // Returns the Patient's Appointment List widget
+  Widget patientAppointmentList(List<TimeSlotModel> appointments) {
+    if(_appointmentList.isNotEmpty) {
+      List<Widget> list = <Widget>[];
 
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    // print(user!.email);
-
-    QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('time_slots')
-      .where('therapist_email', isEqualTo: _chosenTherapistEmail)
-      .where('day', isEqualTo: _chosenTimeSlotDay)
-      .where('time', isEqualTo: _chosenTimeSlotTime)
-      .get();
-    QueryDocumentSnapshot doc = querySnap.docs[0];  // Assumption: the query returns only one document, THE doc you are looking for.
-    DocumentReference docRef = doc.reference;
-    await docRef.update({
-      'availability': false,
-      'booked_by': user!.email,
-    });
+      appointments.asMap().forEach((index, data) {
+        String time = timeFormatting(data.time);
+        // getDisplayNameFromEmail(data.booked_by!, index);
+        if (_displayNameList.length == _appointmentList.length) {
+          list.add(Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  ListTile(
+                    title: Text(
+                      // '',
+                      // index.toString(),
+                      'Dr. ' + _displayNameList[index],
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1.5,
+                      ),
+                    ),
+                    subtitle: Text(
+                      data.day!.substring(2) + '\n' + time,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () {
+                        // _chosenTimeSlotDay = data.day!;
+                        // _chosenTimeSlotTime = data.time!;
+                        // setTimeSlots();
+                        // _displayNameList.clear();
+                        // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                        showDialog<String>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: Icon(
+                              Icons.warning_amber_rounded,
+                              size: 50,
+                              color: Colors.red.shade600,
+                            ),
+                            content: Text(
+                              'Are you sure you want to cancel this appointment?',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, 'Cancel'),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                  Navigator.pop(context, 'Confirm');
+                                },
+                                child: Text(
+                                  'Confirm',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }, 
+                      child: Text('Cancel'),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
+                        overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ));
+        }
+      });
+      return Scaffold(
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: list,
+            ),
+          ),
+        ),
+      );
+    }
+    else {
+      return Scaffold(
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          child: SingleChildScrollView(
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'You have no appointments!',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
-  
-}
 
-class Article extends StatelessWidget {
-  const Article({ Key? key }) : super(key: key);
+  // Returns the Therapist's Appointments List widget
+  Widget therapistAppointmentList(List<TimeSlotModel> appointments) {
+    if(_appointmentList.isNotEmpty) {
+      List<Widget> list = <Widget>[];
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Article Title'),
-        // centerTitle: true,
-        backgroundColor: Color.fromRGBO(4, 98, 126,1.0),
-        elevation: 0.0,
-      ),
-      backgroundColor: Color.fromRGBO(240,240,235,1.0),
-      body: Text('article content'),
-    );
+      appointments.asMap().forEach((index, data) {
+        String time = timeFormatting(data.time);
+        // getDisplayNameFromEmail(data.booked_by!, index);
+        if (_displayNameList.length == _appointmentList.length) {
+          list.add(Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  ListTile(
+                    title: Text(
+                      // '',
+                      // index.toString(),
+                      'Patient: ' + _displayNameList[index],
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1.5,
+                      ),
+                    ),
+                    subtitle: Text(
+                      data.day!.substring(2) + '\n' + time,
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () {
+                        // _chosenTimeSlotDay = data.day!;
+                        // _chosenTimeSlotTime = data.time!;
+                        // setTimeSlots();
+                        // _displayNameList.clear();
+                        // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                        showDialog<String>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: Icon(
+                              Icons.warning_amber_rounded,
+                              size: 50,
+                              color: Colors.red.shade600,
+                            ),
+                            content: Text(
+                              'Are you sure you want to cancel this appointment?',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, 'Cancel'),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                  Navigator.pop(context, 'Confirm');
+                                },
+                                child: Text(
+                                  'Confirm',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }, 
+                      child: Icon(CupertinoIcons.delete_solid, size:22),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
+                        overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ));
+        }
+      });
+      return Scaffold(
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: list,
+            ),
+          ),
+        ),
+      );
+    }
+    else {
+      return Scaffold(
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          child: SingleChildScrollView(
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    'You have no appointments!',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
+
+  Future cancelAppointment(String? therapistEmail, String? patientEmail, String? day, int? time) async {
+    await TimeSlotService().cancelAppointment(therapistEmail!, patientEmail!, day!, time!);
+  }
+
+  Future getDisplayNameFromEmail(List<TimeSlotModel> appointmentList) async{
+    List<String> displayNameList = [];
+    if (_currentUser.type == 'P') {
+      for (var data in appointmentList) {
+        String displayName = await UserService().getDisplayNameFromEmail(data.therapist_email!);
+        displayNameList.add(displayName);
+      }
+    }
+    else {  //_currentUser.type == 'T'
+      for (var data in appointmentList) {
+        String displayName = await UserService().getDisplayNameFromEmail(data.booked_by!);
+        displayNameList.add(displayName);
+      }
+    }
+    
+    if(mounted){
+        setState(() {
+          _displayNameList = displayNameList;
+        });
+      }
+  }
+
+  // Function for time formatting
+  String timeFormatting(int? time) {
+    String startTime = "";
+    String endTime = "";
+    String hour = "";
+    String minute = "";
+    String amPm = "am";
+
+    // Time formatting
+    if (time! < 1300) {
+      if (time >= 1200) {
+        amPm = "pm";
+      }
+      startTime = (time).toString();
+      if(startTime.length == 3) {
+        startTime = "0" + startTime;
+      }
+      if (startTime[0] == "0") {
+        hour = startTime.substring(1,2);
+      }
+      else {
+        hour = startTime.substring(0,2);
+      }
+      minute = startTime.substring(2,4);
+      startTime = hour + "." + minute + amPm;
+    }
+    if ( (time + 0200) < 1300 ) {
+      if (time + 0200 >= 1200) {
+        amPm = "pm";
+      }
+      endTime = (time + 0200).toString();
+      if(endTime.length == 3) {
+        endTime = "0" + endTime;
+      }
+      if (endTime[0] == "0") {
+        hour = endTime.substring(1,2);
+      }
+      else {
+        hour = endTime.substring(0,2);
+      }
+      minute = endTime.substring(2,4);
+      endTime = hour + "." + minute + amPm;
+    }
+
+    if (time >= 1300) {
+      if (time >= 1200) {
+        amPm = "pm";
+      }
+      startTime = (time - 1200).toString();
+      if(startTime.length == 3) {
+        startTime = "0" + startTime;
+      }
+      if (startTime[0] == "0") {
+        hour = startTime.substring(1,2);
+      }
+      else {
+        hour = startTime.substring(0,2);
+      }
+      minute = startTime.substring(2,4);
+      startTime = hour + "." + minute + amPm;
+    }
+    if ( (time + 0200) >= 1300 ) {
+      if (time + 0200 >= 1200) {
+        amPm = "pm";
+      }
+      endTime = (time - 1200 + 0200).toString();
+      if(endTime.length == 3) {
+        endTime = "0" + endTime;
+      }
+      if (endTime[0] == "0") {
+        hour = endTime.substring(1,2);
+      }
+      else {
+        hour = endTime.substring(0,2);
+      }
+      minute = endTime.substring(2,4);
+      endTime = hour + "." + minute + amPm;
+    }
+
+    return (startTime + " - " + endTime);
+  }
+
 }

@@ -2,14 +2,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fyp_app/models/user_model.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/services/database.dart';
-import 'package:provider/provider.dart';
+import 'package:fyp_app/services/user_services.dart';
 import 'package:fyp_app/user_list.dart';
-
-final FirebaseAuth auth = FirebaseAuth.instance;
-final User? user = auth.currentUser;
-String _displayName = "";
+import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
   const Home({ Key? key }) : super(key: key);
@@ -21,9 +19,11 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
 
   final AuthService _auth = AuthService();
+  String _displayName = "";
 
   @override
   Widget build(BuildContext context) {
+  // print(_displayName);
     return StreamProvider<QuerySnapshot?>.value(
       value: DatabaseService(uid:'').users,
       initialData: null,
@@ -91,16 +91,51 @@ class _HomeState extends State<Home> {
     );
   }
 
+  Widget displayUserDisplayName() {
+    getUserDisplayName();
+    return Text(
+      // 'Hi ' + getUserDisplayName() + '!',
+      'Hi ' + _displayName + '!',
+      style: TextStyle(
+        fontSize: 20,
+      ),
+    );
+  }
+
   Future getUserDisplayName() async {
-    // String displayName = "";
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+
+    UserModel userData = await UserService().getCurrentUserData();
+    // String displayName = '';
+
     // var db = FirebaseFirestore.instance;
     // db.collection('users').doc(user!.uid).get();
     // var docRef = db.collection("users").doc(user!.uid);
-    await FirebaseFirestore.instance.collection('users')
-      .doc(user!.uid)
-      .get().then((query) {
-        _displayName = query.get('displayName');
+    // await FirebaseFirestore.instance.collection('users')
+    // .doc(user!.uid)
+    // .get().then((query) {
+    //   if(query.get('type') == 'T') {
+    //     displayName = 'Dr. ' + query.get('displayName');
+    //   }
+    //   else {
+    //     displayName = query.get('displayName');
+    //   }
+    // });
+
+    if (mounted) {
+      setState(() {
+        _displayName = userData.displayName!;
       });
+    }
+    // var displayName = user!.displayName;
+    
+    // if(displayName != null){
+    //   return displayName;
+    // }
+    // else {
+    //   return '';
+    // }
 
     // docRef.get().then((doc) => {
     //   if (doc.exists) {
@@ -108,16 +143,6 @@ class _HomeState extends State<Home> {
     //   }
     // });
     // return displayName;
-  }
-
-  Widget displayUserDisplayName() {
-    getUserDisplayName();
-    return Text(
-      'Hi ' + _displayName,
-      style: TextStyle(
-        fontSize: 20,
-      ),
-    );
   }
 
 }

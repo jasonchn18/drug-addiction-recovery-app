@@ -93,7 +93,6 @@ class MyApp extends StatelessWidget {
           // '/': (context) => Loading(),
           '/home': (context) => Home(),
           '/appointment': (context) => Appointment(),
-          '/article': (context) => Article(),
           '/achievements': (context) => Achievements(),
           '/community': (context) => Community(),
           '/chat': (context) => Chat(),
