@@ -1,5 +1,5 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -25,25 +25,18 @@ class _AppointmentState extends State<Appointment> {
   UserModel _currentUser = UserModel();
   // userType _currentUserType = userType.patient;
   // final String? _currentUserEmail = _user!.email;
-  bool _hasAppointment = false;
 
   int activeStep = 0;
   int upperBound = 2;
   
-  // List<DocumentSnapshot> _therapists = [];
   List<UserModel> _therapistList = [];
-  // List<DocumentSnapshot> _timeSlots = [];
   List<TimeSlotModel> _timeSlotList = [];
   List<TimeSlotModel> _appointmentList = [];
   List<String> _displayNameList = [];
-  // List<DocumentSnapshot> _patientAppointment = []; //An appointment booked by a patient
-  // List<DocumentSnapshot> _therapistAppointments = []; //Appointments booked for a therapist
   String _chosenTherapistDisplayName = "";
   String _chosenTherapistEmail = "";
   String _chosenTimeSlotDay = "";
   int _chosenTimeSlotTime = 0;
-
-  // Stream<DocumentSnapshot> snapshot =  FirebaseFirestore.instance.collection("users").doc('qDRHNNU6sxOCPNXFpvbGmdMqm3w1').snapshots();
 
   void _prevButtonAction() {
     setState(() {
@@ -304,22 +297,6 @@ class _AppointmentState extends State<Appointment> {
   }
 
   Future getTherapists() async {
-    // List<DocumentSnapshot> docs = [];
-    
-    // await FirebaseFirestore.instance.collection('users')
-    // .where("type",isEqualTo: "T")
-    // .orderBy("displayName")
-    // .get().then((query) {
-    //     docs = query.docs;
-    // });
-    // // query.docs is a list
-
-    // if(mounted){
-    //   setState(() {
-    //     _therapists = docs;
-    //   });
-    // }
-
     List<UserModel> therapistList = await UserService().getAllTherapists();
     
     if(mounted){
@@ -392,23 +369,6 @@ class _AppointmentState extends State<Appointment> {
   }
   
   Future getTimeSlots() async {
-    // List<DocumentSnapshot> docs = [];
-    
-    // await FirebaseFirestore.instance.collection('time_slots')
-    // .where("therapist_email",isEqualTo: _chosenTherapistEmail)
-    // .where("availability",isEqualTo: true)
-    // .orderBy("day")
-    // .orderBy("time")
-    // .get().then((query) {
-    //   docs = query.docs;
-    // });
-
-    // if (mounted) {
-    //   setState(() {
-    //     _timeSlots = docs;
-    //   });
-    // }
-
     List<TimeSlotModel> timeSlotList = await TimeSlotService().getAvailableTimeSlots(_chosenTherapistEmail);
     
     if(mounted){
@@ -494,6 +454,16 @@ class _AppointmentState extends State<Appointment> {
                           TextButton(
                             onPressed: () {
                               Navigator.pop(context, 'Confirm');
+
+                              final snackBar = SnackBar(
+                                content: Text('Appointment booked successfully!'),
+                                action: SnackBarAction(
+                                  label: 'Close',
+                                  onPressed: () {},
+                                ),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
                               bookTimeSlots();
                             },
                             child: Text(
@@ -534,45 +504,10 @@ class _AppointmentState extends State<Appointment> {
   }
   
   Future bookTimeSlots() async {
-    // QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('time_slots')
-    //   .where('therapist_email', isEqualTo: _chosenTherapistEmail)
-    //   .where('day', isEqualTo: _chosenTimeSlotDay)
-    //   .where('time', isEqualTo: _chosenTimeSlotTime)
-    //   .get();
-    // QueryDocumentSnapshot doc = querySnap.docs[0];  // Assumption: the query returns only one document, THE doc you are looking for.
-    // DocumentReference docRef = doc.reference;
-    // await docRef.update({
-    //   'availability': false,
-    //   'booked_by': _currentUser.email,
-    // });
-
     await TimeSlotService().bookTimeSlot(_chosenTherapistEmail, _chosenTimeSlotDay, _chosenTimeSlotTime);
   }
 
   Future getAppointmentList() async {
-    // List<DocumentSnapshot> docs = [];
-    
-    // await FirebaseFirestore.instance.collection('time_slots')
-    // .where("availability",isEqualTo: false)
-    // .where("booked_by",isEqualTo: _currentUser.email)
-    // .get().then((query) {
-    //   docs = query.docs;
-    //   if(docs.isEmpty) {
-    //     if (mounted) {
-    //       setState(() {
-    //         _hasAppointment = false;
-    //       });
-    //     }
-    //   }
-    //   else {
-    //     if (mounted) {
-    //       setState(() {
-    //         _hasAppointment = true;
-    //       });
-    //     }
-    //   }
-    // });
-
     List<TimeSlotModel> appointmentList = [];
     appointmentList = await TimeSlotService().getAppointmentList(_currentUser.type);
     
@@ -590,7 +525,6 @@ class _AppointmentState extends State<Appointment> {
 
       appointments.asMap().forEach((index, data) {
         String time = timeFormatting(data.time);
-        // getDisplayNameFromEmail(data.booked_by!, index);
         if (_displayNameList.length == _appointmentList.length) {
           list.add(Card(
             child: Padding(
@@ -600,8 +534,6 @@ class _AppointmentState extends State<Appointment> {
                 children: <Widget>[
                   ListTile(
                     title: Text(
-                      // '',
-                      // index.toString(),
                       'Dr. ' + _displayNameList[index],
                       style: TextStyle(
                         fontSize: 20,
@@ -617,11 +549,6 @@ class _AppointmentState extends State<Appointment> {
                     ),
                     trailing: ElevatedButton(
                       onPressed: () {
-                        // _chosenTimeSlotDay = data.day!;
-                        // _chosenTimeSlotTime = data.time!;
-                        // setTimeSlots();
-                        // _displayNameList.clear();
-                        // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                         showDialog<String>(
                           context: context,
                           barrierDismissible: false,
@@ -649,8 +576,24 @@ class _AppointmentState extends State<Appointment> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                   Navigator.pop(context, 'Confirm');
+
+                                  final snackBar = SnackBar(
+                                    content: Text('Appointment canceled successfully!'),
+                                    action: SnackBarAction(
+                                      label: 'Close',
+                                      onPressed: () {},
+                                    ),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                  
+                                  if (mounted) {
+                                    setState(() {
+                                      activeStep = 0;
+                                    });
+                                  }
+
+                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                 },
                                 child: Text(
                                   'Confirm',
@@ -722,7 +665,6 @@ class _AppointmentState extends State<Appointment> {
 
       appointments.asMap().forEach((index, data) {
         String time = timeFormatting(data.time);
-        // getDisplayNameFromEmail(data.booked_by!, index);
         if (_displayNameList.length == _appointmentList.length) {
           list.add(Card(
             child: Padding(
@@ -732,8 +674,6 @@ class _AppointmentState extends State<Appointment> {
                 children: <Widget>[
                   ListTile(
                     title: Text(
-                      // '',
-                      // index.toString(),
                       'Patient: ' + _displayNameList[index],
                       style: TextStyle(
                         fontSize: 20,
@@ -749,11 +689,6 @@ class _AppointmentState extends State<Appointment> {
                     ),
                     trailing: ElevatedButton(
                       onPressed: () {
-                        // _chosenTimeSlotDay = data.day!;
-                        // _chosenTimeSlotTime = data.time!;
-                        // setTimeSlots();
-                        // _displayNameList.clear();
-                        // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                         showDialog<String>(
                           context: context,
                           barrierDismissible: false,
@@ -781,8 +716,18 @@ class _AppointmentState extends State<Appointment> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                   Navigator.pop(context, 'Confirm');
+
+                                  final snackBar = SnackBar(
+                                    content: Text('Appointment canceled successfully!'),
+                                    action: SnackBarAction(
+                                      label: 'Close',
+                                      onPressed: () {},
+                                    ),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                 },
                                 child: Text(
                                   'Confirm',
