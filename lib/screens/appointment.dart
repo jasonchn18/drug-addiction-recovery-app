@@ -9,6 +9,8 @@ import 'package:fyp_app/models/user_model.dart';
 import 'package:fyp_app/services/time_slot_services.dart';
 import 'package:fyp_app/services/user_services.dart';
 import 'package:im_stepper/stepper.dart';
+import 'package:flutter_map/flutter_map.dart';
+import "package:latlong2/latlong.dart";
 // import 'dart:async';
 
 // enum userType { patient, therapist }
@@ -21,13 +23,17 @@ class Appointment extends StatefulWidget {
   _AppointmentState createState() => _AppointmentState();
 }
 
+enum Mode { virtual, physical }
+
 class _AppointmentState extends State<Appointment> {
   UserModel _currentUser = UserModel();
   // userType _currentUserType = userType.patient;
   // final String? _currentUserEmail = _user!.email;
 
   int activeStep = 0;
-  int upperBound = 2;
+  int upperBound = 3;
+
+  String _chosenAppointmentMode = "";
   
   List<UserModel> _therapistList = [];
   List<TimeSlotModel> _timeSlotList = [];
@@ -48,6 +54,14 @@ class _AppointmentState extends State<Appointment> {
     setState(() {
       activeStep++;
     });
+  }
+
+  @override
+  void initState() {
+    setState(() {
+      _chosenAppointmentMode = "V";
+    });
+    super.initState();
   }
 
   Future getCurrentUserData() async {
@@ -97,7 +111,7 @@ class _AppointmentState extends State<Appointment> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 25,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -128,6 +142,9 @@ class _AppointmentState extends State<Appointment> {
           case 2:
             return 'Choose a Time Slot';
 
+          case 3:
+            return 'Choose Mode of Appointment';
+
           default:
             return 'Book an Appointment';
         }
@@ -144,9 +161,13 @@ class _AppointmentState extends State<Appointment> {
       case 1:
         getTherapists();
         return therapistList(_therapistList);
+        
       case 2:
         getTimeSlots();
         return timeSlotList(_timeSlotList);
+
+      case 3:
+        return appointmentMode();
 
       default:
         return Scaffold(
@@ -167,6 +188,77 @@ class _AppointmentState extends State<Appointment> {
             ),
           ),
         );
+    }
+  }
+
+  // Returns the buttons widget
+  Widget buttons() {
+    if (activeStep == 3) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: SizedBox(),
+            flex: 1,
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
+              child: Text(buttonText()),
+              style: ButtonStyle(
+                backgroundColor: activeStep == 0 ?
+                  MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+              ),
+            ),
+            flex: 5,
+          ),
+          Expanded(
+            child: SizedBox(),
+            flex: 3,
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {},
+              // => bookTimeSlots(),
+              child: Text('Confirm'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+              ),
+            ),
+            flex: 5,
+          ),
+          Expanded(
+            child: SizedBox(),
+            flex: 1,
+          ),
+        ],
+      );
+    }
+    else {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: SizedBox(),
+            flex: 10,
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
+              child: Text(buttonText()),
+              style: ButtonStyle(
+                backgroundColor: activeStep == 0 ?
+                  MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+              ),
+            ),
+            flex: 11,
+          ),
+          Expanded(
+            child: SizedBox(),
+            flex: 10,
+          ),
+        ],
+      );
     }
   }
 
@@ -202,7 +294,7 @@ class _AppointmentState extends State<Appointment> {
         ),
       );
     }
-    else {  //_hasAppointment == false
+    else {  //_appointmentList.isEmpty
       return SafeArea(
         child: Scaffold(
           resizeToAvoidBottomInset: true,
@@ -212,7 +304,7 @@ class _AppointmentState extends State<Appointment> {
               SizedBox(height: 10),
               NumberStepper(
                 activeStep: activeStep,  // this is the default actually
-                numbers: [1,2,3],
+                numbers: [1,2,3,4],
                 direction: Axis.horizontal,
                 enableNextPreviousButtons: false,
                 enableStepTapping: false,
@@ -240,30 +332,7 @@ class _AppointmentState extends State<Appointment> {
                   alignment: Alignment.topCenter,
                   child: Container(
                     padding: EdgeInsets.all(10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: SizedBox(),
-                          flex: 10,
-                        ),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
-                            child: Text(buttonText()),
-                            style: ButtonStyle(
-                              backgroundColor: activeStep == 0 ?
-                                MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
-                            ),
-                          ),
-                          flex: 11,
-                        ),
-                        Expanded(
-                          child: SizedBox(),
-                          flex: 10,
-                        ),
-                      ],
-                    ),
+                    child: buttons(),
                   ),
                 ),
               ),
@@ -421,67 +490,72 @@ class _AppointmentState extends State<Appointment> {
                     fontSize: 18,
                   ),
                 ),
-                trailing: ElevatedButton(
-                  onPressed: () {
-                    _chosenTimeSlotDay = data.day!;
-                    _chosenTimeSlotTime = data.time!;
-                    // bookTimeSlots();
-                    showDialog<String>(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext context) => AlertDialog(
-                        title: Icon(
-                          Icons.check_circle_rounded,
-                          size: 50,
-                          color: Colors.green.shade600,
-                        ),
-                        content: Text(
-                          'Are you sure you want to book this time slot?',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, 'Cancel'),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, 'Confirm');
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        _chosenTimeSlotDay = data.day!;
+                        _chosenTimeSlotTime = data.time!;
+                        activeStep++; 
+                        // showDialog<String>(
+                        //   context: context,
+                        //   barrierDismissible: false,
+                        //   builder: (BuildContext context) => AlertDialog(
+                        //     title: Icon(
+                        //       Icons.check_circle_rounded,
+                        //       size: 50,
+                        //       color: Colors.green.shade600,
+                        //     ),
+                        //     content: Text(
+                        //       'Are you sure you want to book this time slot?',
+                        //       style: TextStyle(
+                        //         fontSize: 20,
+                        //       ),
+                        //     ),
+                        //     actions: <Widget>[
+                        //       TextButton(
+                        //         onPressed: () => Navigator.pop(context, 'Cancel'),
+                        //         child: Text(
+                        //           'Cancel',
+                        //           style: TextStyle(
+                        //             fontSize: 16,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //       TextButton(
+                        //         onPressed: () {
+                        //           Navigator.pop(context, 'Confirm');
 
-                              final snackBar = SnackBar(
-                                content: Text('Appointment booked successfully!'),
-                                action: SnackBarAction(
-                                  label: 'Close',
-                                  onPressed: () {},
-                                ),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        //           final snackBar = SnackBar(
+                        //             content: Text('Appointment booked successfully!'),
+                        //             action: SnackBarAction(
+                        //               label: 'Close',
+                        //               onPressed: () {},
+                        //             ),
+                        //           );
+                        //           ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                              bookTimeSlots();
-                            },
-                            child: Text(
-                              'Confirm',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                        //           bookTimeSlots();
+                        //         },
+                        //         child: Text(
+                        //           'Confirm',
+                        //           style: TextStyle(
+                        //             fontSize: 17,
+                        //             fontWeight: FontWeight.bold,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // );
+                      }, 
+                      child: Text('Select'),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
                       ),
-                    );
-                  }, 
-                  child: Text('Select'),
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -502,9 +576,110 @@ class _AppointmentState extends State<Appointment> {
       ),
     );
   }
+
+  // Returns the widget for Mode of Appointment
+  Widget appointmentMode() {
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(12.0, 6.0, 12.0, 6.0),
+        child: SingleChildScrollView(
+          child: Column(
+            // crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'Choose your preferred mode of appointment:',
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 5),
+              // Mode of Appointment radio buttons
+              Row(
+                children: <Widget>[
+                  Radio<String>(
+                    activeColor: Colors.teal.shade600,
+                    value: "V",
+                    groupValue: _chosenAppointmentMode,
+                    onChanged: (String? value) {
+                      setState(() {
+                        _chosenAppointmentMode = value!;
+                      });
+                    },
+                  ),
+                  Text('Virtual'),
+                  SizedBox(width: 30.0),
+                  Radio<String>(
+                    activeColor: Colors.teal.shade600,
+                    value: "P",
+                    groupValue: _chosenAppointmentMode,
+                    onChanged: (String? value) {
+                      setState(() {
+                        _chosenAppointmentMode = value!;
+                      });
+                    },
+                  ),
+                  Text('Physical'),
+                ],
+              ),
+              SizedBox(height: 5),
+              virtualOrPhysical(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Returns a widget depending on whether the mode of appointment chosen is Virtual or Physical
+  Widget virtualOrPhysical() {
+    if (_chosenAppointmentMode == 'V') {
+      return SizedBox();
+    }
+    else {  //_chosenAppointmentMode == 'P'
+      return ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Location()),
+          );
+        }, 
+        child: Text('Location button')
+      );
+      // Container(
+      //   height: 100,
+      //   child: FlutterMap(
+      //     options: MapOptions(
+      //       center: LatLng(51.5, -0.09),
+      //       zoom: 13.0,
+      //     ),
+      //     layers: [
+      //       TileLayerOptions(
+      //         urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      //         subdomains: ['a', 'b', 'c'],
+      //         attributionBuilder: (_) {
+      //           return Text("© OpenStreetMap contributors");
+      //         },
+      //       ),
+      //       MarkerLayerOptions(
+      //         markers: [
+      //           Marker(
+      //             width: 80.0,
+      //             height: 80.0,
+      //             point: LatLng(51.5, -0.09),
+      //             builder: (ctx) =>
+      //             FlutterLogo(),
+      //           ),
+      //         ],
+      //       ),
+      //     ],
+      //   ),
+      // );
+    }
+  }
   
   Future bookTimeSlots() async {
-    await TimeSlotService().bookTimeSlot(_chosenTherapistEmail, _chosenTimeSlotDay, _chosenTimeSlotTime);
+    await TimeSlotService().bookTimeSlot(_chosenTherapistEmail, _chosenTimeSlotDay, _chosenTimeSlotTime, _chosenAppointmentMode);
   }
 
   Future getAppointmentList() async {
@@ -547,71 +722,76 @@ class _AppointmentState extends State<Appointment> {
                         fontSize: 18,
                       ),
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        showDialog<String>(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) => AlertDialog(
-                            title: Icon(
-                              Icons.warning_amber_rounded,
-                              size: 50,
-                              color: Colors.red.shade600,
-                            ),
-                            content: Text(
-                              'Are you sure you want to cancel this appointment?',
-                              style: TextStyle(
-                                fontSize: 20,
-                              ),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, 'Cancel'),
-                                child: Text(
-                                  'Cancel',
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog<String>(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) => AlertDialog(
+                                title: Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 50,
+                                  color: Colors.red.shade600,
+                                ),
+                                content: Text(
+                                  'Are you sure you want to cancel this appointment?',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 20,
                                   ),
                                 ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, 'Confirm');
-
-                                  final snackBar = SnackBar(
-                                    content: Text('Appointment canceled successfully!'),
-                                    action: SnackBarAction(
-                                      label: 'Close',
-                                      onPressed: () {},
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, 'Cancel'),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                  
-                                  if (mounted) {
-                                    setState(() {
-                                      activeStep = 0;
-                                    });
-                                  }
-
-                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
-                                },
-                                child: Text(
-                                  'Confirm',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
                                   ),
-                                ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, 'Confirm');
+
+                                      final snackBar = SnackBar(
+                                        content: Text('Appointment canceled successfully!'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {},
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                      
+                                      if (mounted) {
+                                        setState(() {
+                                          activeStep = 0;
+                                        });
+                                      }
+
+                                      cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                    },
+                                    child: Text(
+                                      'Confirm',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            );
+                          }, 
+                          child: Text('Cancel'),
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
+                            overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
                           ),
-                        );
-                      }, 
-                      child: Text('Cancel'),
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
-                        overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -633,7 +813,7 @@ class _AppointmentState extends State<Appointment> {
         ),
       );
     }
-    else {
+    else {  //_appointmentList.isEmpty
       return Scaffold(
         backgroundColor: Color.fromRGBO(240,240,235,1.0),
         body: Padding(
@@ -682,70 +862,75 @@ class _AppointmentState extends State<Appointment> {
                       ),
                     ),
                     subtitle: Text(
-                      data.day!.substring(2) + '\n' + time,
+                      data.day!.substring(2) + '\n' + time + '\nMode: ' + '<mode>',
                       style: TextStyle(
                         fontSize: 18,
                       ),
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        showDialog<String>(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) => AlertDialog(
-                            title: Icon(
-                              Icons.warning_amber_rounded,
-                              size: 50,
-                              color: Colors.red.shade600,
-                            ),
-                            content: Text(
-                              'Are you sure you want to cancel this appointment?',
-                              style: TextStyle(
-                                fontSize: 20,
-                              ),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, 'Cancel'),
-                                child: Text(
-                                  'Cancel',
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog<String>(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) => AlertDialog(
+                                title: Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 50,
+                                  color: Colors.red.shade600,
+                                ),
+                                content: Text(
+                                  'Are you sure you want to cancel this appointment?',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 20,
                                   ),
                                 ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, 'Confirm');
-
-                                  final snackBar = SnackBar(
-                                    content: Text('Appointment canceled successfully!'),
-                                    action: SnackBarAction(
-                                      label: 'Close',
-                                      onPressed: () {},
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, 'Cancel'),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
-                                  cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
-                                },
-                                child: Text(
-                                  'Confirm',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
                                   ),
-                                ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, 'Confirm');
+
+                                      final snackBar = SnackBar(
+                                        content: Text('Appointment canceled successfully!'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {},
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                                      cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                    },
+                                    child: Text(
+                                      'Confirm',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            );
+                          }, 
+                          child: Icon(CupertinoIcons.delete_solid, size:22),
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
+                            overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
                           ),
-                        );
-                      }, 
-                      child: Icon(CupertinoIcons.delete_solid, size:22),
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
-                        overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -767,7 +952,7 @@ class _AppointmentState extends State<Appointment> {
         ),
       );
     }
-    else {
+    else {  //_appointmentList.isEmpty
       return Scaffold(
         backgroundColor: Color.fromRGBO(240,240,235,1.0),
         body: Padding(
@@ -900,4 +1085,113 @@ class _AppointmentState extends State<Appointment> {
     return (startTime + " - " + endTime);
   }
 
+}
+
+class Location extends StatefulWidget {
+  const Location({ Key? key }) : super(key: key);
+
+  @override
+  State<Location> createState() => _LocationState();
+}
+
+class _LocationState extends State<Location> {
+  LatLng currentCenter = LatLng(3.040191, 101.794441);  //hardcode UTAR's latlng
+  double currentZoom = 16.0;
+  MapController mapController = MapController();
+
+  void _zoomIn() {
+    if (currentZoom < 18.0) {
+      currentZoom = currentZoom + 1;
+    }
+    mapController.move(currentCenter, currentZoom);
+  }
+
+  void _zoomOut() {
+    currentZoom = currentZoom - 1;
+    mapController.move(currentCenter, currentZoom);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Location of Chosen Therapist'),
+        backgroundColor: Color.fromRGBO(4, 98, 126, 1.0),
+      ),
+      body: Stack(
+        children: <Widget>[ 
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              center: currentCenter,
+              zoom: currentZoom,
+              maxZoom: 18.0,
+              interactiveFlags: InteractiveFlag.drag,
+            ),
+            layers: [
+              TileLayerOptions(
+                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                subdomains: ['a', 'b', 'c'],
+                attributionBuilder: (_) {
+                  return Text("© OpenStreetMap contributors");
+                },
+              ),
+              MarkerLayerOptions(
+                markers: [
+                  Marker(
+                    rotate: false,
+                    width: 80.0,
+                    height: 80.0,
+                    point: currentCenter,
+                    builder: (ctx) =>
+                    Center(
+                      child: Stack(
+                        children: <Widget>[
+                          Positioned(
+                            left: 1.0,
+                            top: 2.0,
+                            child: Icon(Icons.location_on, color: Colors.black54, size: 40,),
+                          ),
+                          Icon(Icons.location_on, color: Colors.red[600], size: 40,),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            // add your floating action button
+            child: Container(
+              margin: EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 30.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    mini: true,
+                    onPressed: () => _zoomIn(),
+                    child: Icon(Icons.add_rounded, size: 30),
+                    heroTag: null,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10.0))),
+                    backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+                  ),
+                  SizedBox(height: 5.0),
+                  FloatingActionButton(
+                    mini: true,
+                    onPressed: () => _zoomOut(),
+                    child: Icon(Icons.remove_rounded, size: 30),
+                    heroTag: null,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10.0))),
+                    backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ]
+      ),
+    );
+  }
 }

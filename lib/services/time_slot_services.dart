@@ -25,7 +25,7 @@ class TimeSlotService {
   }
 
   // Function for a patient to book an available time slot
-  Future bookTimeSlot(String chosenTherapistEmail, String chosenDay, int chosenTime) async {
+  Future bookTimeSlot(String chosenTherapistEmail, String chosenDay, int chosenTime, String mode) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     QuerySnapshot querySnap = await db.collection('time_slots')
     .where('therapist_email', isEqualTo: chosenTherapistEmail)
@@ -38,6 +38,7 @@ class TimeSlotService {
     await docRef.update({
       'availability': false,
       'booked_by': user!.email,
+      'mode': mode,
     });
   }
 

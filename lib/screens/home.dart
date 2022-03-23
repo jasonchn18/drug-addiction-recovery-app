@@ -95,7 +95,7 @@ class _HomeState extends State<Home> {
     getUserDisplayName();
     return Text(
       // 'Hi ' + getUserDisplayName() + '!',
-      'Hi ' + _displayName + '!',
+      'Hi' + _displayName + '!',
       style: TextStyle(
         fontSize: 20,
       ),
@@ -125,7 +125,7 @@ class _HomeState extends State<Home> {
 
     if (mounted) {
       setState(() {
-        _displayName = userData.displayName!;
+        _displayName = ' ' + userData.displayName!;
       });
     }
     // var displayName = user!.displayName;
