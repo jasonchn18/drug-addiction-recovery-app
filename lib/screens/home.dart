@@ -17,13 +17,22 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  UserModel _currentUser = UserModel();
 
   final AuthService _auth = AuthService();
-  String _displayName = "";
+
+  Future getCurrentUserData() async {
+    UserModel user = await UserService().getCurrentUserData();
+    if(mounted){
+      setState(() {
+        _currentUser = user;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-  // print(_displayName);
+  getCurrentUserData();
     return StreamProvider<QuerySnapshot?>.value(
       value: DatabaseService(uid:'').users,
       initialData: null,
@@ -92,57 +101,16 @@ class _HomeState extends State<Home> {
   }
 
   Widget displayUserDisplayName() {
-    getUserDisplayName();
     return Text(
-      // 'Hi ' + getUserDisplayName() + '!',
-      'Hi' + _displayName + '!',
+      ( _currentUser.displayName != null ? 
+        ( _currentUser.type == 'T' ? 
+          ('Hi Dr. ' + _currentUser.displayName! + '!') 
+          : ('Hi ' + _currentUser.displayName! + '!') ) 
+        : 'Hi!' ),
       style: TextStyle(
         fontSize: 20,
       ),
     );
   }
-
-  Future getUserDisplayName() async {
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-
-    UserModel userData = await UserService().getCurrentUserData();
-    // String displayName = '';
-
-    // var db = FirebaseFirestore.instance;
-    // db.collection('users').doc(user!.uid).get();
-    // var docRef = db.collection("users").doc(user!.uid);
-    // await FirebaseFirestore.instance.collection('users')
-    // .doc(user!.uid)
-    // .get().then((query) {
-    //   if(query.get('type') == 'T') {
-    //     displayName = 'Dr. ' + query.get('displayName');
-    //   }
-    //   else {
-    //     displayName = query.get('displayName');
-    //   }
-    // });
-
-    if (mounted) {
-      setState(() {
-        _displayName = ' ' + userData.displayName!;
-      });
-    }
-    // var displayName = user!.displayName;
-    
-    // if(displayName != null){
-    //   return displayName;
-    // }
-    // else {
-    //   return '';
-    // }
-
-    // docRef.get().then((doc) => {
-    //   if (doc.exists) {
-    //     displayName = doc.get('displayName')
-    //   }
-    // });
-    // return displayName;
-  }
-
+  
 }

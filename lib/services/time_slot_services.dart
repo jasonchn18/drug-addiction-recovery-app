@@ -90,6 +90,7 @@ class TimeSlotService {
     await docRef.update({
       'availability': true,
       'booked_by': "",
+      'mode': "",
     });
   }
 }

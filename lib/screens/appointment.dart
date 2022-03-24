@@ -4,8 +4,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:fyp_app/models/therapist_location_model.dart';
 import 'package:fyp_app/models/time_slot_model.dart';
 import 'package:fyp_app/models/user_model.dart';
+import 'package:fyp_app/services/therapist_location_services.dart';
 import 'package:fyp_app/services/time_slot_services.dart';
 import 'package:fyp_app/services/user_services.dart';
 import 'package:im_stepper/stepper.dart';
@@ -16,6 +18,7 @@ import "package:latlong2/latlong.dart";
 // enum userType { patient, therapist }
 // FirebaseAuth auth = FirebaseAuth.instance;
 // User? _user = auth.currentUser;
+late TherapistLocationModel _therapistLocation;
 class Appointment extends StatefulWidget {
   const Appointment({ Key? key }) : super(key: key);
 
@@ -218,7 +221,59 @@ class _AppointmentState extends State<Appointment> {
           ),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                showDialog<String>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Icon(
+                      Icons.check_circle_rounded,
+                      size: 50,
+                      color: Colors.green.shade600,
+                    ),
+                    content: Text(
+                      'Are you sure you want to book this appointment?',
+                      style: TextStyle(
+                        fontSize: 20,
+                      ),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, 'Cancel'),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, 'Confirm');
+
+                          final snackBar = SnackBar(
+                            content: Text('Appointment booked successfully!'),
+                            action: SnackBarAction(
+                              label: 'Close',
+                              onPressed: () {},
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                          bookTimeSlots();
+                        },
+                        child: Text(
+                          'Confirm',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
               // => bookTimeSlots(),
               child: Text('Confirm'),
               style: ButtonStyle(
@@ -410,6 +465,7 @@ class _AppointmentState extends State<Appointment> {
                         size: 30,
                       ),
                       onPressed: () { 
+                        getLocationByTherapistEmail(data.email!);
                         _chosenTherapistDisplayName = data.displayName!;
                         _chosenTherapistEmail = data.email!;
                         activeStep++; 
@@ -458,13 +514,32 @@ class _AppointmentState extends State<Appointment> {
           Text(
             'Dr. ' + _chosenTherapistDisplayName + '\'s available time slot(s):',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 16,
             ),
           ),
           SizedBox(height: 10),
         ],
       ),
     ));
+
+    if (timeSlots.isEmpty) {
+      list.add(Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            SizedBox(height: 10.0),
+            Text(
+              'There are currently no available time slots.',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.red[600],
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ));
+    }
     
     for (var data in timeSlots) {
       String time = timeFormatting(data.time);
@@ -563,6 +638,7 @@ class _AppointmentState extends State<Appointment> {
         ),
       ));
     }
+
     return Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
       body: Padding(
@@ -585,7 +661,7 @@ class _AppointmentState extends State<Appointment> {
         padding: const EdgeInsets.fromLTRB(12.0, 6.0, 12.0, 6.0),
         child: SingleChildScrollView(
           child: Column(
-            // crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
                 'Choose your preferred mode of appointment:',
@@ -623,6 +699,12 @@ class _AppointmentState extends State<Appointment> {
                 ],
               ),
               SizedBox(height: 5),
+              Text('Therapist: ' + _chosenTherapistDisplayName, style: TextStyle(fontSize: 18,)),
+              SizedBox(height: 5),
+              Text('Time Slot: ' + _chosenTimeSlotDay.substring(2) + ', ' + timeFormatting(_chosenTimeSlotTime), style: TextStyle(fontSize: 18,)),
+              SizedBox(height: 5),
+              Text('Mode: ' + (_chosenAppointmentMode == 'V' ? 'Virtual' : 'Physical'), style: TextStyle(fontSize: 18,)),
+              SizedBox(height: 15),
               virtualOrPhysical(),
             ],
           ),
@@ -637,44 +719,28 @@ class _AppointmentState extends State<Appointment> {
       return SizedBox();
     }
     else {  //_chosenAppointmentMode == 'P'
-      return ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Location()),
-          );
-        }, 
-        child: Text('Location button')
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text('Location: ' + _therapistLocation.location!, style: TextStyle(fontSize: 18,)),
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Location()),
+              );
+            },
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              backgroundColor: MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+              padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.fromLTRB(16.0, 5.0, 16.0, 5.0)),
+            ),
+            label: Text('View Location on Map'),
+            icon: Icon(Icons.map_outlined),
+            // child: Container(margin: EdgeInsets.fromLTRB(12.0, 3.0, 12.0, 3.0), child: Text('View Location on Map')),
+          ),
+        ],
       );
-      // Container(
-      //   height: 100,
-      //   child: FlutterMap(
-      //     options: MapOptions(
-      //       center: LatLng(51.5, -0.09),
-      //       zoom: 13.0,
-      //     ),
-      //     layers: [
-      //       TileLayerOptions(
-      //         urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      //         subdomains: ['a', 'b', 'c'],
-      //         attributionBuilder: (_) {
-      //           return Text("© OpenStreetMap contributors");
-      //         },
-      //       ),
-      //       MarkerLayerOptions(
-      //         markers: [
-      //           Marker(
-      //             width: 80.0,
-      //             height: 80.0,
-      //             point: LatLng(51.5, -0.09),
-      //             builder: (ctx) =>
-      //             FlutterLogo(),
-      //           ),
-      //         ],
-      //       ),
-      //     ],
-      //   ),
-      // );
     }
   }
   
@@ -717,7 +783,7 @@ class _AppointmentState extends State<Appointment> {
                       ),
                     ),
                     subtitle: Text(
-                      data.day!.substring(2) + '\n' + time,
+                      data.day!.substring(2) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
                       style: TextStyle(
                         fontSize: 18,
                       ),
@@ -862,7 +928,7 @@ class _AppointmentState extends State<Appointment> {
                       ),
                     ),
                     subtitle: Text(
-                      data.day!.substring(2) + '\n' + time + '\nMode: ' + '<mode>',
+                      data.day!.substring(2) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
                       style: TextStyle(
                         fontSize: 18,
                       ),
@@ -977,10 +1043,12 @@ class _AppointmentState extends State<Appointment> {
     }
   }
 
+  // Function to cancel an appointment
   Future cancelAppointment(String? therapistEmail, String? patientEmail, String? day, int? time) async {
     await TimeSlotService().cancelAppointment(therapistEmail!, patientEmail!, day!, time!);
   }
 
+  // Function to get display name from email
   Future getDisplayNameFromEmail(List<TimeSlotModel> appointmentList) async{
     List<String> displayNameList = [];
     if (_currentUser.type == 'P') {
@@ -1001,6 +1069,17 @@ class _AppointmentState extends State<Appointment> {
           _displayNameList = displayNameList;
         });
       }
+  }
+
+  // Function to get therapist's location by their email
+  Future getLocationByTherapistEmail(String therapistEmail) async {
+    TherapistLocationModel therapistLocation;
+    therapistLocation = await TherapistLocationService().getLocationByTherapistEmail(therapistEmail);
+    if (mounted) {
+      setState(() {
+        _therapistLocation = therapistLocation;
+      });
+    }
   }
 
   // Function for time formatting
@@ -1095,9 +1174,17 @@ class Location extends StatefulWidget {
 }
 
 class _LocationState extends State<Location> {
-  LatLng currentCenter = LatLng(3.040191, 101.794441);  //hardcode UTAR's latlng
+  // LatLng initialCenter = LatLng(3.1076865826032387, 101.47808749998136);
+  LatLng initialCenter = LatLng(_therapistLocation.latitude!, _therapistLocation.longitude!);
+  late LatLng currentCenter;
   double currentZoom = 16.0;
   MapController mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    currentCenter = initialCenter;
+  }
 
   void _zoomIn() {
     if (currentZoom < 18.0) {
@@ -1111,8 +1198,16 @@ class _LocationState extends State<Location> {
     mapController.move(currentCenter, currentZoom);
   }
 
+  void _recenter() {
+    currentCenter = initialCenter;
+    mapController.move(currentCenter, currentZoom);
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('Location: ' + _therapistLocation.location!);
+    print('Latitude: ' + _therapistLocation.latitude.toString());
+    print('Longitude: ' + _therapistLocation.longitude.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text('Location of Chosen Therapist'),
@@ -1127,6 +1222,7 @@ class _LocationState extends State<Location> {
               zoom: currentZoom,
               maxZoom: 18.0,
               interactiveFlags: InteractiveFlag.drag,
+              onPositionChanged: (mapPosition, boolValue) => currentCenter = mapPosition.center!,
             ),
             layers: [
               TileLayerOptions(
@@ -1142,7 +1238,7 @@ class _LocationState extends State<Location> {
                     rotate: false,
                     width: 80.0,
                     height: 80.0,
-                    point: currentCenter,
+                    point: initialCenter,
                     builder: (ctx) =>
                     Center(
                       child: Stack(
@@ -1168,8 +1264,10 @@ class _LocationState extends State<Location> {
               margin: EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 30.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   FloatingActionButton(
+                    tooltip: 'Zoom In',
                     mini: true,
                     onPressed: () => _zoomIn(),
                     child: Icon(Icons.add_rounded, size: 30),
@@ -1177,13 +1275,21 @@ class _LocationState extends State<Location> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10.0))),
                     backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
                   ),
-                  SizedBox(height: 5.0),
                   FloatingActionButton(
+                    tooltip: 'Zoom Out',
                     mini: true,
                     onPressed: () => _zoomOut(),
                     child: Icon(Icons.remove_rounded, size: 30),
                     heroTag: null,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10.0))),
+                    backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+                  ),
+                  SizedBox(height: 13.0),
+                  FloatingActionButton(
+                    tooltip: 'Re-center',
+                    onPressed: () => _recenter(),
+                    child: Icon(Icons.my_location_rounded, size: 30),
+                    heroTag: null,
                     backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
                   ),
                 ],
