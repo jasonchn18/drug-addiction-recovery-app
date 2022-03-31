@@ -42,6 +42,7 @@ class _AppointmentState extends State<Appointment> {
   List<TimeSlotModel> _timeSlotList = [];
   List<TimeSlotModel> _appointmentList = [];
   List<String> _displayNameList = [];
+  List _therapistLocationList = [];
   String _chosenTherapistDisplayName = "";
   String _chosenTherapistEmail = "";
   String _chosenTimeSlotDay = "";
@@ -81,6 +82,7 @@ class _AppointmentState extends State<Appointment> {
     getCurrentUserData();
     getAppointmentList();
     getDisplayNameFromEmail(_appointmentList);
+    getTherapistLocations();
     if(_currentUser.type == 'P') {
       return outputForPatient();
     }
@@ -162,7 +164,7 @@ class _AppointmentState extends State<Appointment> {
   Widget body() {
     switch (activeStep) {
       case 1:
-        getTherapists();
+        // getTherapists();
         return therapistList(_therapistList);
         
       case 2:
@@ -180,6 +182,7 @@ class _AppointmentState extends State<Appointment> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                SizedBox(height: 15.0),
                 Text(
                   'To book an appointment with a therapist, \nall you have to do is pick the therapist of your choice and choose any time slots that are available!',
                   textAlign: TextAlign.center,
@@ -350,6 +353,7 @@ class _AppointmentState extends State<Appointment> {
       );
     }
     else {  //_appointmentList.isEmpty
+      getTherapists();
       return SafeArea(
         child: Scaffold(
           resizeToAvoidBottomInset: true,
@@ -377,7 +381,7 @@ class _AppointmentState extends State<Appointment> {
               Expanded(
                 flex: 6,
                 child: Padding(
-                  padding: EdgeInsets.all(15),
+                  padding: EdgeInsets.symmetric(horizontal: 15.0),
                   child: body(),
                 ),
               ),
@@ -433,6 +437,34 @@ class _AppointmentState extends State<Appointment> {
   // Returns the Therapist List widget
   Widget therapistList(List<UserModel> therapists) {
     List<Widget> list = <Widget>[];
+    list.add(
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(
+          child: Text(
+            'All Therapists\' Locations',
+            style: TextStyle(
+              fontSize: 15,
+              decoration: TextDecoration.underline
+            ),
+          ),
+          style: ButtonStyle(
+            // backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+          ),
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 50.0),
+                  child: therapistLocationTable(_therapistLocationList),
+                );
+              }
+            );
+          }, 
+        ),
+      )
+    );
     for (var data in therapists) {
       list.add(Card(
         child: Padding(
@@ -492,6 +524,58 @@ class _AppointmentState extends State<Appointment> {
       ),
     );
   }
+
+  // Function to get all therapist locations
+  Future getTherapistLocations() async {
+    List<TherapistLocationModel> therapistLocationList = await TherapistLocationService().getAllTherapistLocations();
+    
+    if(_therapistLocationList.isEmpty) {
+      // ignore: avoid_function_literals_in_foreach_calls
+      therapistLocationList.forEach((data) async {
+        var object = {
+          'name': await UserService().getDisplayNameFromEmail(data.therapist_email!),
+          'email': data.therapist_email,
+          'location': data.location,
+        };
+
+        _therapistLocationList.add(object);
+      });
+    }
+  }
+
+  // Returns the Therapist Location Table widget
+  Widget therapistLocationTable(List therapistLocationList) {
+    therapistLocationList.sort((a, b) => a['name'].compareTo(b['name']));
+    
+    List<DataRow> list = [];
+
+    for (var data in therapistLocationList) {
+      list.add(DataRow(
+        cells: <DataCell>[
+          DataCell(Text('Dr. ' + data['name'])),
+          DataCell(Text(data['location'])),
+        ],
+      ));
+    }
+    return DataTable(
+      columnSpacing: 0, //follows length of text in column
+      columns: <DataColumn>[
+        DataColumn(
+          label: Text(
+            'Therapist',
+            style: TextStyle( fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            'Location',
+            style: TextStyle( fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+      rows: list,
+    );
+  }
   
   Future getTimeSlots() async {
     List<TimeSlotModel> timeSlotList = await TimeSlotService().getAvailableTimeSlots(_chosenTherapistEmail);
@@ -511,6 +595,7 @@ class _AppointmentState extends State<Appointment> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
+          SizedBox(height: 10.0),
           Text(
             'Dr. ' + _chosenTherapistDisplayName + '\'s available time slot(s):',
             style: TextStyle(
@@ -573,57 +658,6 @@ class _AppointmentState extends State<Appointment> {
                         _chosenTimeSlotDay = data.day!;
                         _chosenTimeSlotTime = data.time!;
                         activeStep++; 
-                        // showDialog<String>(
-                        //   context: context,
-                        //   barrierDismissible: false,
-                        //   builder: (BuildContext context) => AlertDialog(
-                        //     title: Icon(
-                        //       Icons.check_circle_rounded,
-                        //       size: 50,
-                        //       color: Colors.green.shade600,
-                        //     ),
-                        //     content: Text(
-                        //       'Are you sure you want to book this time slot?',
-                        //       style: TextStyle(
-                        //         fontSize: 20,
-                        //       ),
-                        //     ),
-                        //     actions: <Widget>[
-                        //       TextButton(
-                        //         onPressed: () => Navigator.pop(context, 'Cancel'),
-                        //         child: Text(
-                        //           'Cancel',
-                        //           style: TextStyle(
-                        //             fontSize: 16,
-                        //           ),
-                        //         ),
-                        //       ),
-                        //       TextButton(
-                        //         onPressed: () {
-                        //           Navigator.pop(context, 'Confirm');
-
-                        //           final snackBar = SnackBar(
-                        //             content: Text('Appointment booked successfully!'),
-                        //             action: SnackBarAction(
-                        //               label: 'Close',
-                        //               onPressed: () {},
-                        //             ),
-                        //           );
-                        //           ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
-                        //           bookTimeSlots();
-                        //         },
-                        //         child: Text(
-                        //           'Confirm',
-                        //           style: TextStyle(
-                        //             fontSize: 17,
-                        //             fontWeight: FontWeight.bold,
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // );
                       }, 
                       child: Text('Select'),
                       style: ButtonStyle(
@@ -663,10 +697,13 @@ class _AppointmentState extends State<Appointment> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                'Choose your preferred mode of appointment:',
-                style: TextStyle(
-                  fontSize: 16,
+              SizedBox(height: 10.0),
+              Center(
+                child: Text(
+                  'Choose your preferred mode of appointment:',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
                 ),
               ),
               SizedBox(height: 5),
@@ -732,12 +769,11 @@ class _AppointmentState extends State<Appointment> {
             },
             style: ButtonStyle(
               foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-              backgroundColor: MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
-              padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.fromLTRB(16.0, 5.0, 16.0, 5.0)),
+              backgroundColor: MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.7)),
+              padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.fromLTRB(17.0, 5.0, 18.0, 5.0)),
             ),
             label: Text('View Location on Map'),
             icon: Icon(Icons.map_outlined),
-            // child: Container(margin: EdgeInsets.fromLTRB(12.0, 3.0, 12.0, 3.0), child: Text('View Location on Map')),
           ),
         ],
       );
@@ -851,7 +887,7 @@ class _AppointmentState extends State<Appointment> {
                               ),
                             );
                           }, 
-                          child: Text('Cancel'),
+                          child: Icon(CupertinoIcons.delete_solid, size:22),
                           style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
                             overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
@@ -1205,9 +1241,6 @@ class _LocationState extends State<Location> {
 
   @override
   Widget build(BuildContext context) {
-    print('Location: ' + _therapistLocation.location!);
-    print('Latitude: ' + _therapistLocation.latitude.toString());
-    print('Longitude: ' + _therapistLocation.longitude.toString());
     return Scaffold(
       appBar: AppBar(
         title: Text('Location of Chosen Therapist'),
@@ -1229,7 +1262,8 @@ class _LocationState extends State<Location> {
                 urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
                 attributionBuilder: (_) {
-                  return Text("© OpenStreetMap contributors");
+                  return Text("");
+                  // return Text("© OpenStreetMap contributors");
                 },
               ),
               MarkerLayerOptions(
@@ -1246,9 +1280,9 @@ class _LocationState extends State<Location> {
                           Positioned(
                             left: 1.0,
                             top: 2.0,
-                            child: Icon(Icons.location_on, color: Colors.black54, size: 40,),
+                            child: Icon(Icons.location_on, color: Colors.black54, size: 45,),
                           ),
-                          Icon(Icons.location_on, color: Colors.red[600], size: 40,),
+                          Icon(Icons.location_on, color: Colors.red[600], size: 45,),
                         ],
                       ),
                     ),
@@ -1261,7 +1295,7 @@ class _LocationState extends State<Location> {
             alignment: Alignment.bottomRight,
             // add your floating action button
             child: Container(
-              margin: EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 30.0),
+              margin: EdgeInsets.fromLTRB(15.0, 15.0, 15.0, 20.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1290,7 +1324,7 @@ class _LocationState extends State<Location> {
                     onPressed: () => _recenter(),
                     child: Icon(Icons.my_location_rounded, size: 30),
                     heroTag: null,
-                    backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+                    backgroundColor: Color.fromRGBO(4, 98, 126, 0.9),
                   ),
                 ],
               ),
