@@ -10,15 +10,17 @@ import 'package:fyp_app/models/user_model.dart';
 import 'package:fyp_app/services/therapist_location_services.dart';
 import 'package:fyp_app/services/time_slot_services.dart';
 import 'package:fyp_app/services/user_services.dart';
+import 'package:fyp_app/shared/constants.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong2/latlong.dart";
 // import 'dart:async';
 
-// enum userType { patient, therapist }
-// FirebaseAuth auth = FirebaseAuth.instance;
-// User? _user = auth.currentUser;
 late TherapistLocationModel _therapistLocation;
+late List<TimeSlotModel> _allTimeSlots;
+UserModel _currentUser = UserModel();
+final _formKey = GlobalKey<FormState>();
+
 class Appointment extends StatefulWidget {
   const Appointment({ Key? key }) : super(key: key);
 
@@ -29,7 +31,6 @@ class Appointment extends StatefulWidget {
 enum Mode { virtual, physical }
 
 class _AppointmentState extends State<Appointment> {
-  UserModel _currentUser = UserModel();
   // userType _currentUserType = userType.patient;
   // final String? _currentUserEmail = _user!.email;
 
@@ -68,25 +69,17 @@ class _AppointmentState extends State<Appointment> {
     super.initState();
   }
 
-  Future getCurrentUserData() async {
-    UserModel user = await UserService().getCurrentUserData();
-    if(mounted){
-      setState(() {
-        _currentUser = user;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     getCurrentUserData();
     getAppointmentList();
     getDisplayNameFromEmail(_appointmentList);
-    getTherapistLocations();
     if(_currentUser.type == 'P') {
+      getTherapistLocations();
       return outputForPatient();
     }
     else {  //_currentUser.type == 'T'
+      getAllTimeSlots();
       return outputForTherapist();
     }
   }
@@ -412,12 +405,42 @@ class _AppointmentState extends State<Appointment> {
             SizedBox(height: 25),
             header(),
             Expanded(
-              // flex: 6,
+              flex: 6,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(5, 15, 5, 15),
                 child: therapistAppointmentList(_appointmentList),
               ),
             ),
+            Expanded(
+                flex: 1,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ManageTimeSlots()),
+                        );
+                      }, 
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'View All Your Time Slots',
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+                        elevation: MaterialStateProperty.all<double>(0.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1118,86 +1141,15 @@ class _AppointmentState extends State<Appointment> {
     }
   }
 
-  // Function for time formatting
-  String timeFormatting(int? time) {
-    String startTime = "";
-    String endTime = "";
-    String hour = "";
-    String minute = "";
-    String amPm = "am";
-
-    // Time formatting
-    if (time! < 1300) {
-      if (time >= 1200) {
-        amPm = "pm";
-      }
-      startTime = (time).toString();
-      if(startTime.length == 3) {
-        startTime = "0" + startTime;
-      }
-      if (startTime[0] == "0") {
-        hour = startTime.substring(1,2);
-      }
-      else {
-        hour = startTime.substring(0,2);
-      }
-      minute = startTime.substring(2,4);
-      startTime = hour + "." + minute + amPm;
+  // Function to get all time slots
+  Future getAllTimeSlots() async {
+    List<TimeSlotModel> allTimeSlots;
+    allTimeSlots = await TimeSlotService().getAllTimeSlots();
+    if (mounted) {
+      setState(() {
+        _allTimeSlots = allTimeSlots;
+      });
     }
-    if ( (time + 0200) < 1300 ) {
-      if (time + 0200 >= 1200) {
-        amPm = "pm";
-      }
-      endTime = (time + 0200).toString();
-      if(endTime.length == 3) {
-        endTime = "0" + endTime;
-      }
-      if (endTime[0] == "0") {
-        hour = endTime.substring(1,2);
-      }
-      else {
-        hour = endTime.substring(0,2);
-      }
-      minute = endTime.substring(2,4);
-      endTime = hour + "." + minute + amPm;
-    }
-
-    if (time >= 1300) {
-      if (time >= 1200) {
-        amPm = "pm";
-      }
-      startTime = (time - 1200).toString();
-      if(startTime.length == 3) {
-        startTime = "0" + startTime;
-      }
-      if (startTime[0] == "0") {
-        hour = startTime.substring(1,2);
-      }
-      else {
-        hour = startTime.substring(0,2);
-      }
-      minute = startTime.substring(2,4);
-      startTime = hour + "." + minute + amPm;
-    }
-    if ( (time + 0200) >= 1300 ) {
-      if (time + 0200 >= 1200) {
-        amPm = "pm";
-      }
-      endTime = (time - 1200 + 0200).toString();
-      if(endTime.length == 3) {
-        endTime = "0" + endTime;
-      }
-      if (endTime[0] == "0") {
-        hour = endTime.substring(1,2);
-      }
-      else {
-        hour = endTime.substring(0,2);
-      }
-      minute = endTime.substring(2,4);
-      endTime = hour + "." + minute + amPm;
-    }
-
-    return (startTime + " - " + endTime);
   }
 
 }
@@ -1334,4 +1286,483 @@ class _LocationState extends State<Location> {
       ),
     );
   }
+}
+
+class ManageTimeSlots extends StatefulWidget {
+  const ManageTimeSlots({ Key? key }) : super(key: key);
+
+  @override
+  State<ManageTimeSlots> createState() => _ManageTimeSlotsState();
+}
+
+class _ManageTimeSlotsState extends State<ManageTimeSlots> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      appBar: AppBar(
+        title: Text('Your Time Slots'),
+        backgroundColor: Color.fromRGBO(4, 98, 126, 1.0),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ElevatedButton(
+              child: Text(
+                'Add',
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+              ),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+                elevation: MaterialStateProperty.all<double>(0.0),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddTimeSlot()),
+                ).then((value) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ManageTimeSlots()));
+                });
+                // addTimeSlot('7-Sunday', 1800); //just for testing
+              },
+            ),
+            Expanded(child: allTimeSlotList(_allTimeSlots)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Returns the All Time Slot List widget
+  Widget allTimeSlotList(List<TimeSlotModel> allTimeSlots) {
+    List<Widget> list = <Widget>[];
+
+    if (allTimeSlots.isEmpty) {
+      list.add(Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            SizedBox(height: 10.0),
+            Text(
+              'There are currently no available time slots.',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.red[600],
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ));
+    }
+    
+    for (var data in allTimeSlots) {
+      String time = timeFormatting(data.time);
+
+      list.add(Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text(
+                  data.day!.substring(2),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.5,
+                  ),
+                ),
+                subtitle: Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 18,
+                  ),
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        showDialog<String>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (BuildContext context) => AlertDialog(
+                            title: Icon(
+                              Icons.warning_amber_rounded,
+                              size: 50,
+                              color: Colors.red.shade600,
+                            ),
+                            content: Text(
+                              'Are you sure you want to delete this time slot?',
+                              style: TextStyle(
+                                fontSize: 20,
+                              ),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, 'Cancel'),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, 'Confirm');
+                                  deleteTimeSlot(data.day!, data.time!);
+
+                                  final snackBar = SnackBar(
+                                    content: Text('Time slot deleted successfully!'),
+                                    action: SnackBarAction(
+                                      label: 'Close',
+                                      onPressed: () {},
+                                    ),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                                  // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                },
+                                child: Text(
+                                  'Confirm',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }, 
+                      child: Icon(CupertinoIcons.delete_solid, size:22),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.red.shade600),
+                        overlayColor: MaterialStateProperty.all<Color>(Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+    }
+
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: list,
+        ),
+      ),
+    );
+  }
+
+  Future deleteTimeSlot(String day, int time) async {
+    TimeSlotModel timeSlot = TimeSlotModel();
+    timeSlot.day = day;
+    timeSlot.time = time;
+    timeSlot.therapist_email = _currentUser.email;
+    await TimeSlotService().deleteTimeSlot(timeSlot).then((value) {
+      if(mounted){
+        setState(() {
+          _allTimeSlots = _allTimeSlots;
+        });
+      }
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ManageTimeSlots()));
+    });
+
+    if(mounted){
+      setState(() {
+        _allTimeSlots = _allTimeSlots;
+      });
+    }
+  }
+  
+}
+
+// ignore: must_be_immutable
+class AddTimeSlot extends StatefulWidget {
+  const AddTimeSlot({ Key? key }) : super(key: key);
+
+  @override
+  State<AddTimeSlot> createState() => _AddTimeSlotState();
+}
+
+class _AddTimeSlotState extends State<AddTimeSlot> {
+
+  String day = '';
+  int time = 0000;
+  String selectedDay = "default";
+  int selectedTime = 0000;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240, 240, 235, 1.0),
+      appBar: AppBar(
+        title: Text('Add New Time Slot'),
+        backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+      ),
+      body: Container(
+        padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 20.0),
+              // Email text field:
+              DropdownButtonFormField(
+                items: <DropdownMenuItem<String>>[
+                  DropdownMenuItem(child: Text("Choose Day", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: "default"),
+                  DropdownMenuItem(child: Text("Monday"), value: "1-Monday"),
+                  DropdownMenuItem(child: Text("Tuesday"), value: "2-Tuesday"),
+                  DropdownMenuItem(child: Text("Wednesday"), value: "3-Wednesday"),
+                  DropdownMenuItem(child: Text("Thursday"), value: "4-Thursday"),
+                  DropdownMenuItem(child: Text("Friday"), value: "5-Friday"),
+                  DropdownMenuItem(child: Text("Saturday"), value: "6-Saturday"),
+                  DropdownMenuItem(child: Text("Sunday"), value: "7-Sunday"),
+                ],
+                value: selectedDay,
+                validator: (val) => val=="default" ? 'Please choose a day.' : null,
+                decoration: textInputDecoration,
+                onChanged: (String? newValue){
+                  setState(() {
+                    selectedDay = newValue!;
+                  });
+                  
+                },
+              ),
+              SizedBox(height: 20.0),
+              DropdownButtonFormField(
+                items: <DropdownMenuItem<int>>[
+                  DropdownMenuItem(child: Text("Choose Time", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
+                  DropdownMenuItem(child:  Text("9.00 am"), value: 0900),
+                  DropdownMenuItem(child:  Text("9.30 am"), value: 0930),
+                  DropdownMenuItem(child: Text("10.00 am"), value: 1000),
+                  DropdownMenuItem(child: Text("10.30 am"), value: 1030),
+                  DropdownMenuItem(child: Text("11.00 am"), value: 1100),
+                  DropdownMenuItem(child: Text("11.30 am"), value: 1130),
+                  DropdownMenuItem(child: Text("12.00 pm"), value: 1200),
+                  DropdownMenuItem(child: Text("12.30 pm"), value: 1230),
+                  DropdownMenuItem(child:  Text("1.00 pm"), value: 1300),
+                  DropdownMenuItem(child:  Text("1.30 pm"), value: 1330),
+                  DropdownMenuItem(child:  Text("2.00 pm"), value: 1400),
+                  DropdownMenuItem(child:  Text("2.30 pm"), value: 1430),
+                  DropdownMenuItem(child:  Text("3.00 pm"), value: 1500),
+                  DropdownMenuItem(child:  Text("3.30 pm"), value: 1530),
+                  DropdownMenuItem(child:  Text("4.00 pm"), value: 1600),
+                  DropdownMenuItem(child:  Text("4.30 pm"), value: 1630),
+                  DropdownMenuItem(child:  Text("5.00 pm"), value: 1700),
+                  DropdownMenuItem(child:  Text("5.30 pm"), value: 1730),
+                  DropdownMenuItem(child:  Text("6.00 pm"), value: 1800),
+                ],
+                value: selectedTime,
+                validator: (val) => val==0000 ? 'Please choose a time.' : null,
+                decoration: textInputDecoration,
+                onChanged: (int? newValue){
+                  setState(() {
+                    selectedTime = newValue!;
+                  });
+                  
+                },
+              ),
+              SizedBox(height: 20.0),
+              Text('(Each time slot has a duration of 2 hours)'),
+              SizedBox(height: 30.0),
+              ElevatedButton(
+                onPressed: () async {
+                  print(selectedDay + selectedTime.toString());
+                  // Navigator.of(context).pop();
+                  if (_formKey.currentState!.validate()) {
+                    showDialog<String>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Icon(
+                          Icons.event_available_rounded,
+                          size: 50,
+                          color: Colors.green.shade600,
+                        ),
+                        content: Text(
+                          'Are you sure you want to add this new time slot?\n\n' + selectedDay.substring(2) + ', ' + timeFormatting(selectedTime),
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'Cancel'),
+                            child: Opacity(
+                              opacity: 0.8,
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, 'Confirm');
+
+                              final snackBar = SnackBar(
+                                content: Text('Time slot added successfully!'),
+                                action: SnackBarAction(
+                                  label: 'Close',
+                                  onPressed: () {},
+                                ),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                              if(mounted){
+                                setState(() {
+                                  addTimeSlot(selectedDay, selectedTime);
+                                  // _allTimeSlots = _allTimeSlots;
+                                });
+                              }
+                            },
+                            child: Text(
+                              'Confirm',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                }, 
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('Add Time Slot'),
+                ),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
+                  textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                ),
+              ),
+            ],
+          ),
+        )
+      )
+    );
+  }
+
+  Future addTimeSlot(String day, int time) async {
+    TimeSlotModel timeSlot = TimeSlotModel();
+    timeSlot.availability = true;
+    timeSlot.booked_by = "";
+    timeSlot.day = day;
+    timeSlot.mode = "";
+    timeSlot.therapist_email = _currentUser.email;
+    timeSlot.time = time;
+    await TimeSlotService().addTimeSlot(timeSlot).then((value) {
+      Navigator.of(context).pop();
+      setState(() {
+        _allTimeSlots = _allTimeSlots;
+      });
+    });
+  }
+  
+}
+
+Future getCurrentUserData() async {
+  UserModel user = await UserService().getCurrentUserData();
+  _currentUser = user;
+}
+
+// Function for time formatting
+String timeFormatting(int? time) {
+String startTime = "";
+String endTime = "";
+String hour = "";
+String minute = "";
+String amPm = "am";
+
+// Time formatting
+if (time! < 1300) {
+  if (time >= 1200) {
+    amPm = "pm";
+  }
+  startTime = (time).toString();
+  if(startTime.length == 3) {
+    startTime = "0" + startTime;
+  }
+  if (startTime[0] == "0") {
+    hour = startTime.substring(1,2);
+  }
+  else {
+    hour = startTime.substring(0,2);
+  }
+  minute = startTime.substring(2,4);
+  startTime = hour + "." + minute + amPm;
+}
+if ( (time + 0200) < 1300 ) {
+  if (time + 0200 >= 1200) {
+    amPm = "pm";
+  }
+  endTime = (time + 0200).toString();
+  if(endTime.length == 3) {
+    endTime = "0" + endTime;
+  }
+  if (endTime[0] == "0") {
+    hour = endTime.substring(1,2);
+  }
+  else {
+    hour = endTime.substring(0,2);
+  }
+  minute = endTime.substring(2,4);
+  endTime = hour + "." + minute + amPm;
+}
+
+if (time >= 1300) {
+  if (time >= 1200) {
+    amPm = "pm";
+  }
+  startTime = (time - 1200).toString();
+  if(startTime.length == 3) {
+    startTime = "0" + startTime;
+  }
+  if (startTime[0] == "0") {
+    hour = startTime.substring(1,2);
+  }
+  else {
+    hour = startTime.substring(0,2);
+  }
+  minute = startTime.substring(2,4);
+  startTime = hour + "." + minute + amPm;
+}
+if ( (time + 0200) >= 1300 ) {
+  if (time + 0200 >= 1200) {
+    amPm = "pm";
+  }
+  endTime = (time - 1200 + 0200).toString();
+  if(endTime.length == 3) {
+    endTime = "0" + endTime;
+  }
+  if (endTime[0] == "0") {
+    hour = endTime.substring(1,2);
+  }
+  else {
+    hour = endTime.substring(0,2);
+  }
+  minute = endTime.substring(2,4);
+  endTime = hour + "." + minute + amPm;
+}
+
+return (startTime + " - " + endTime);
 }

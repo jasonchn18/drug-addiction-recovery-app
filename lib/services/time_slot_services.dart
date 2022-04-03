@@ -5,6 +5,24 @@ import 'package:fyp_app/models/time_slot_model.dart';
 class TimeSlotService {
   User? user = FirebaseAuth.instance.currentUser;
   
+  // Function to get all time slots
+  Future<List<TimeSlotModel>> getAllTimeSlots() async {
+    List<TimeSlotModel> timeSlotList = [];
+
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    await db.collection('time_slots')
+    .where("therapist_email",isEqualTo: user!.email)
+    .orderBy("day")
+    .orderBy("time")
+    .get().then((query) {
+      for (var doc in query.docs) {
+        timeSlotList.add(TimeSlotModel.fromMap(doc.data()));
+      }
+    });
+
+    return timeSlotList;
+  }
+  
   // Function to get all available time slots
   Future<List<TimeSlotModel>> getAvailableTimeSlots(String chosenTherapistEmail) async {
     List<TimeSlotModel> timeSlotList = [];
@@ -92,5 +110,21 @@ class TimeSlotService {
       'booked_by': "",
       'mode': "",
     });
+  }
+
+  // Function for a therapist to add a new time slot
+  Future addTimeSlot(TimeSlotModel timeSlot) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    await db.collection('time_slots').doc().set(timeSlot.toMap());
+  }
+
+  // Function for a therapist to delete a time slot
+  Future deleteTimeSlot(TimeSlotModel timeSlot) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    await db.collection('time_slots')
+    .where('therapist_email', isEqualTo: user!.email)
+    .where('day', isEqualTo: timeSlot.day)
+    .where('time', isEqualTo: timeSlot.time)
+    .get().then((value) => value.docs[0].reference.delete());
   }
 }
