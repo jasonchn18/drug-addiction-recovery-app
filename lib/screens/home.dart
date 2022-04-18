@@ -57,7 +57,7 @@ class _HomeState extends State<Home> {
                               await _auth.signOut();
                             }, 
                             icon: Icon(
-                              Icons.person_remove_rounded,
+                              Icons.person_rounded,
                               color: Colors.red[600],
                             ), 
                             label: Text(
@@ -79,6 +79,9 @@ class _HomeState extends State<Home> {
                 ),
                 SizedBox(height: 8.0,),
                 Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
                   color: Color.fromRGBO(206,209,226,1.0),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(35.0, 15.0, 35.0, 30.0),

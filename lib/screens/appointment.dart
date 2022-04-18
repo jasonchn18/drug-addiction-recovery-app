@@ -1,12 +1,15 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:fyp_app/models/appointment_model.dart';
 import 'package:fyp_app/models/therapist_location_model.dart';
 import 'package:fyp_app/models/time_slot_model.dart';
 import 'package:fyp_app/models/user_model.dart';
+import 'package:fyp_app/services/appointment_services.dart';
 import 'package:fyp_app/services/therapist_location_services.dart';
 import 'package:fyp_app/services/time_slot_services.dart';
 import 'package:fyp_app/services/user_services.dart';
@@ -14,6 +17,7 @@ import 'package:fyp_app/shared/constants.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong2/latlong.dart";
+import 'package:intl/intl.dart';
 // import 'dart:async';
 
 late TherapistLocationModel _therapistLocation;
@@ -49,41 +53,9 @@ class _AppointmentState extends State<Appointment> {
   String _chosenTimeSlotDay = "";
   int _chosenTimeSlotTime = 0;
 
+  final DateFormat dateFormatter = DateFormat('dd-MM-yyyy');
   DateTime _selectedDate = DateTime.now().toLocal();
-  
-  // Initial Selected Value for Choose Date
-  String _dropdownvalue = 'Item 1111';   
-  int _dropdownvaluenew = 0000;   
-  
-  // List of items in our dropdown menu
-  var items = [    
-    'Item 1111',
-    'Item 2',
-    'Item 3',
-    'Item 4',
-    'Item 5',
-    'Item 6',
-    'Item 7',
-    'Item 8',
-    'Item 9',
-    'Item 10',
-    'Item 11',
-    'Item 12',
-    'Item 13',
-    'Item 14',
-    'Item 15',
-    'Item 16',
-    'Item 17',
-    'Item 18',
-    'Item 19',
-    'Item 20',
-  ];
-  var itemsnew = [    
-    0800,
-    1000,
-    1400,
-    1600,
-  ];
+  int _timeDropDownValue = 0000;
 
   void _prevButtonAction() {
     setState(() {
@@ -237,7 +209,59 @@ class _AppointmentState extends State<Appointment> {
 
   // Returns the buttons widget
   Widget buttons() {
-    if (activeStep == 3) {
+    if (activeStep == 2) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: SizedBox(),
+            flex: 1,
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: activeStep == 0 ? ()=>_startButtonAction() : ()=>_prevButtonAction(),
+              child: Text(buttonText()),
+              style: ButtonStyle(
+                backgroundColor: activeStep == 0 ?
+                  MaterialStateProperty.all<Color>(Colors.teal.shade600) : MaterialStateProperty.all<Color>(Color.fromRGBO(4, 98, 126, 0.8)),
+              ),
+            ),
+            flex: 5,
+          ),
+          Expanded(
+            child: SizedBox(),
+            flex: 3,
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  var newHour;
+                  if (_timeDropDownValue.toString().length == 3) {
+                    newHour = int.parse(_timeDropDownValue.toString().substring(0,1));
+                  }
+                  else if (_timeDropDownValue.toString().length == 4) {
+                    newHour = int.parse(_timeDropDownValue.toString().substring(0,2));
+                  }
+                  _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, newHour, _selectedDate.minute, _selectedDate.second, _selectedDate.millisecond, _selectedDate.microsecond);
+                  _startButtonAction();
+                }
+              },
+              child: Text('Next'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+              ),
+            ),
+            flex: 5,
+          ),
+          Expanded(
+            child: SizedBox(),
+            flex: 1,
+          ),
+        ],
+      );
+    }
+    else if (activeStep == 3) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -301,7 +325,8 @@ class _AppointmentState extends State<Appointment> {
                           );
                           ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                          bookTimeSlots();
+                          // bookTimeSlots();
+                          bookAppointment();
                         },
                         child: Text(
                           'Confirm',
@@ -647,6 +672,7 @@ class _AppointmentState extends State<Appointment> {
 
   // Returns the Choose Date widget
   Widget chooseDate() {
+
     if(_selectedDate.weekday == 7) {  // if selected day is Sunday
       setState(() {
         // Shift it forward by one day, to Monday
@@ -659,73 +685,76 @@ class _AppointmentState extends State<Appointment> {
       body: Padding(
         padding: const EdgeInsets.fromLTRB(15.0, 8.0, 15.0, 8.0),
         child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 15.0,),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Date: ',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: <Widget>[
+                SizedBox(height: 15.0,),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Date: ',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "${_selectedDate.toLocal()}".split(' ')[0],
-                          style: TextStyle(
-                            fontSize: 20,
-                            decoration: TextDecoration.underline,
+                          Text(
+                            "${_selectedDate.toLocal()}".split(' ')[0],
+                            style: TextStyle(
+                              fontSize: 20,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 5.0,),
-              ElevatedButton.icon(
-                onPressed: () { 
-                  _selectDate(context);
-                },
-                label: Text('Select Date'),
-                icon: Icon(Icons.calendar_today_outlined, size: 18,),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade500),
+                  ],
                 ),
-              ),
-              SizedBox(height: 20.0,),
-              DropdownButtonFormField(
-                items: <DropdownMenuItem<int>>[
-                  DropdownMenuItem(child: Text("Select Time", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
-                  DropdownMenuItem(child: Text(timeFormatting(0800)), value: 0800),
-                  DropdownMenuItem(child: Text(timeFormatting(1000)), value: 1000),
-                  DropdownMenuItem(child: Text(timeFormatting(1400)), value: 1400),
-                  DropdownMenuItem(child: Text(timeFormatting(1600)), value: 1600),
-                ],
-                value: _dropdownvaluenew,
-                validator: (val) => val==0000 ? 'Please choose a time.' : null,
-                decoration: InputDecoration(
-                  fillColor: Colors.white,
-                  filled: true,
-                  enabledBorder: OutlineInputBorder(  // border style for enabled input fields
-                    borderSide: BorderSide(color:Colors.white, width:2.0),
+                SizedBox(height: 5.0,),
+                ElevatedButton.icon(
+                  onPressed: () { 
+                    _selectDate(context);
+                  },
+                  label: Text('Select Date'),
+                  icon: Icon(Icons.calendar_today_outlined, size: 18,),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade500),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color:Color.fromRGBO(134,148,133,1), width:2.0),
-                  )
                 ),
-                onChanged: (int? newValue){
-                  setState(() {
-                    _dropdownvaluenew = newValue!;
-                  });
-                },
-              ),
-            ],
+                SizedBox(height: 20.0,),
+                DropdownButtonFormField(
+                  items: <DropdownMenuItem<int>>[
+                    DropdownMenuItem(child: Text("Select Time", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
+                    DropdownMenuItem(child: Text(timeFormatting(0800)), value: 0800),
+                    DropdownMenuItem(child: Text(timeFormatting(1000)), value: 1000),
+                    DropdownMenuItem(child: Text(timeFormatting(1400)), value: 1400),
+                    DropdownMenuItem(child: Text(timeFormatting(1600)), value: 1600),
+                  ],
+                  value: _timeDropDownValue,
+                  validator: (val) => val==0000 ? 'Please choose a time.' : null,
+                  decoration: InputDecoration(
+                    fillColor: Colors.white,
+                    filled: true,
+                    enabledBorder: OutlineInputBorder(  // border style for enabled input fields
+                      borderSide: BorderSide(color:Colors.white, width:2.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color:Color.fromRGBO(134,148,133,1), width:2.0),
+                    )
+                  ),
+                  onChanged: (int? newValue){
+                    setState(() {
+                      _timeDropDownValue = newValue!;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -914,10 +943,12 @@ class _AppointmentState extends State<Appointment> {
                 ],
               ),
               SizedBox(height: 5),
-              Text('Therapist: ' + _chosenTherapistDisplayName, style: TextStyle(fontSize: 18,)),
+              Text('Therapist: Dr. ' + _chosenTherapistDisplayName, style: TextStyle(fontSize: 18,)),
+              SizedBox(height: 10),
+              Text('Date: ' + dateFormatter.format(_selectedDate.toLocal()), style: TextStyle(fontSize: 18,)),
               SizedBox(height: 5),
-              Text('Time Slot: ' + _chosenTimeSlotDay.substring(2) + ', ' + timeFormatting(_chosenTimeSlotTime), style: TextStyle(fontSize: 18,)),
-              SizedBox(height: 5),
+              Text('Time Slot: ' + timeFormatting(_timeDropDownValue), style: TextStyle(fontSize: 18,)),
+              SizedBox(height: 10),
               Text('Mode: ' + (_chosenAppointmentMode == 'V' ? 'Virtual' : 'Physical'), style: TextStyle(fontSize: 18,)),
               SizedBox(height: 15),
               virtualOrPhysical(),
@@ -956,6 +987,16 @@ class _AppointmentState extends State<Appointment> {
         ],
       );
     }
+  }
+
+  // Function for patient to book an appointment
+  Future bookAppointment() async {
+    AppointmentModel appointment = AppointmentModel();
+    appointment.therapist_email = _chosenTherapistEmail;
+    appointment.date = Timestamp.fromDate(_selectedDate);
+    appointment.mode = _chosenAppointmentMode;
+    appointment.booked_by = _currentUser.email;
+    await AppointmentService().bookAppointment(appointment);
   }
   
   Future bookTimeSlots() async {
@@ -1737,7 +1778,6 @@ class _AddTimeSlotState extends State<AddTimeSlot> {
               SizedBox(height: 30.0),
               ElevatedButton(
                 onPressed: () async {
-                  print(selectedDay + selectedTime.toString());
                   // Navigator.of(context).pop();
                   if (_formKey.currentState!.validate()) {
                     showDialog<String>(
