@@ -8,7 +8,7 @@ import 'app.dart';
 import 'wrapper.dart';
 import 'package:fyp_app/screens/home.dart';
 import 'package:fyp_app/screens/appointment.dart';
-import 'package:fyp_app/screens/achievements.dart';
+import 'package:fyp_app/screens/tracking.dart';
 import 'package:fyp_app/screens/community.dart';
 import 'package:fyp_app/screens/chat.dart';
 
@@ -93,7 +93,7 @@ class MyApp extends StatelessWidget {
           // '/': (context) => Loading(),
           '/home': (context) => Home(),
           '/appointment': (context) => Appointment(),
-          '/achievements': (context) => Achievements(),
+          '/tracking': (context) => Tracking(),
           '/community': (context) => Community(),
           '/chat': (context) => Chat(),
         },

@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:flutter/material.dart';
 import 'package:fyp_app/screens/appointment.dart';
-import 'package:fyp_app/screens/achievements.dart';
+import 'package:fyp_app/screens/tracking.dart';
 import 'package:fyp_app/screens/home.dart';
 import 'package:fyp_app/screens/community.dart';
 import 'package:fyp_app/screens/chat.dart';
@@ -14,7 +14,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  int _currentIndex = 2;  // set initial 
+  int _currentIndex = 1;  // set initial 
 
   @override
   Widget build(BuildContext context) {
@@ -35,27 +35,20 @@ class _AppState extends State<App> {
           onTap: (newIndex) => setState((){_currentIndex = newIndex;}),
           items: [
             BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today_rounded),
+                icon: Icon(Icons.event_rounded),
                 label: 'Appointment'
-            ),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.collections_bookmark_rounded),
-                label: 'Achievements'
             ),
             BottomNavigationBarItem(
                 icon: Icon(Icons.home_rounded),
                 label: 'Home'
             ),
             BottomNavigationBarItem(
-                icon: Icon(Icons.group_rounded),
-                label: 'Community'
-            ),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.chat_rounded),
-                label: 'Chat'
+                icon: Icon(Icons.collections_bookmark_rounded),
+                label: 'Tracking'
             ),
           ],
           // selectedItemColor: Colors.amber[800],
+          unselectedItemColor: Color.fromRGBO(240,240,235,1.0),
           selectedItemColor: Color.fromRGBO(248,221,145,1.0),
         ),
       ),
@@ -63,10 +56,8 @@ class _AppState extends State<App> {
         index: _currentIndex,
         children: <Widget>[
           Appointment(),
-          Achievements(),
           Home(),
-          Community(),
-          Chat(),
+          Tracking(),
         ],
       ),
     );

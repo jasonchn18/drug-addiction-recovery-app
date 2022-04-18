@@ -58,60 +58,68 @@ class _LoginState extends State<Login> {
         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 20.0),
-              // Email text field:
-              TextFormField(
-                decoration: textInputDecoration.copyWith(hintText: 'Email'),
-                validator: (val) => val!.isEmpty ? 'Enter an email.' : null,
-                onChanged: (val) {  
-                  // val represents whatever is in the form field
-                  // onChanged means everytime something is typed or deleted from the form field
-                  setState(() => email = val);
-                },
-              ),
-              SizedBox(height: 20.0),
-              // Password text field:
-              TextFormField(
-                decoration: textInputDecoration.copyWith(hintText: 'Password'),
-                obscureText: true,
-                validator: (val) => val!.length < 6 ? 'Enter a password with length of more than 6 characters.' : null,
-                onChanged: (val) {
-                  setState(() => password = val);
-                },
-              ),
-              SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    setState(() => loading = true);
-                    dynamic result = await _auth.signInWithEmailAndPassword(email, password);
-                    if (result == null) {
-                      setState(() {
-                        error = 'Could not sign in with those credentials.';
-                        loading = false;
-                      });
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                SizedBox(height: 20.0),
+                Image(
+                  image: AssetImage('assets/logo.png'),
+                  height: 200,
+                  fit: BoxFit.fitHeight,
+                ),
+                SizedBox(height: 30.0),
+                // Email text field:
+                TextFormField(
+                  decoration: textInputDecoration.copyWith(hintText: 'Email'),
+                  validator: (val) => val!.isEmpty ? 'Enter an email.' : null,
+                  onChanged: (val) {  
+                    // val represents whatever is in the form field
+                    // onChanged means everytime something is typed or deleted from the form field
+                    setState(() => email = val);
+                  },
+                ),
+                SizedBox(height: 20.0),
+                // Password text field:
+                TextFormField(
+                  decoration: textInputDecoration.copyWith(hintText: 'Password'),
+                  obscureText: true,
+                  validator: (val) => val!.length < 6 ? 'Enter a password with length of more than 6 characters.' : null,
+                  onChanged: (val) {
+                    setState(() => password = val);
+                  },
+                ),
+                SizedBox(height: 20.0),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      setState(() => loading = true);
+                      dynamic result = await _auth.signInWithEmailAndPassword(email, password);
+                      if (result == null) {
+                        setState(() {
+                          error = 'Could not sign in with those credentials.';
+                          loading = false;
+                        });
+                      }
+                      print(email);
+                      print(password);
                     }
-                    print(email);
-                    print(password);
-                  }
-                }, 
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('Login'),
+                  }, 
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('Login'),
+                  ),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
+                    textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                  ),
                 ),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
-                  textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                SizedBox(height: 12.0),
+                Text(
+                  error,
+                  style: TextStyle(color: Colors.red, fontSize:14.0),
                 ),
-              ),
-              SizedBox(height: 12.0),
-              Text(
-                error,
-                style: TextStyle(color: Colors.red, fontSize:14.0),
-              ),
-            ],
+              ],
+            ),
           ),
         )
         // child: ElevatedButton(

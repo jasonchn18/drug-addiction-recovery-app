@@ -49,6 +49,42 @@ class _AppointmentState extends State<Appointment> {
   String _chosenTimeSlotDay = "";
   int _chosenTimeSlotTime = 0;
 
+  DateTime _selectedDate = DateTime.now().toLocal();
+  
+  // Initial Selected Value for Choose Date
+  String _dropdownvalue = 'Item 1111';   
+  int _dropdownvaluenew = 0000;   
+  
+  // List of items in our dropdown menu
+  var items = [    
+    'Item 1111',
+    'Item 2',
+    'Item 3',
+    'Item 4',
+    'Item 5',
+    'Item 6',
+    'Item 7',
+    'Item 8',
+    'Item 9',
+    'Item 10',
+    'Item 11',
+    'Item 12',
+    'Item 13',
+    'Item 14',
+    'Item 15',
+    'Item 16',
+    'Item 17',
+    'Item 18',
+    'Item 19',
+    'Item 20',
+  ];
+  var itemsnew = [    
+    0800,
+    1000,
+    1400,
+    1600,
+  ];
+
   void _prevButtonAction() {
     setState(() {
       activeStep--;
@@ -65,6 +101,7 @@ class _AppointmentState extends State<Appointment> {
   void initState() {
     setState(() {
       _chosenAppointmentMode = "V";
+      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1); // appointment should be made at least 1 day before
     });
     super.initState();
   }
@@ -138,7 +175,10 @@ class _AppointmentState extends State<Appointment> {
             return 'Choose your Therapist';
 
           case 2:
-            return 'Choose a Time Slot';
+          if(_chosenTherapistEmail != "susie@gmail.com") {
+              return 'Choose a Time Slot';
+          }
+          else { return 'Choose Date'; }
 
           case 3:
             return 'Choose Mode of Appointment';
@@ -161,8 +201,13 @@ class _AppointmentState extends State<Appointment> {
         return therapistList(_therapistList);
         
       case 2:
-        getTimeSlots();
-        return timeSlotList(_timeSlotList);
+        if(_chosenTherapistEmail != "susie@gmail.com") {
+          getTimeSlots();
+          return timeSlotList(_timeSlotList);
+        }
+        else {
+          return chooseDate();
+        }
 
       case 3:
         return appointmentMode();
@@ -598,6 +643,116 @@ class _AppointmentState extends State<Appointment> {
       ],
       rows: list,
     );
+  }
+
+  // Returns the Choose Date widget
+  Widget chooseDate() {
+    if(_selectedDate.weekday == 7) {  // if selected day is Sunday
+      setState(() {
+        // Shift it forward by one day, to Monday
+        _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
+      });
+    }
+    
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240,240,235,1.0),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(15.0, 8.0, 15.0, 8.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 15.0,),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Date: ',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "${_selectedDate.toLocal()}".split(' ')[0],
+                          style: TextStyle(
+                            fontSize: 20,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 5.0,),
+              ElevatedButton.icon(
+                onPressed: () { 
+                  _selectDate(context);
+                },
+                label: Text('Select Date'),
+                icon: Icon(Icons.calendar_today_outlined, size: 18,),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade500),
+                ),
+              ),
+              SizedBox(height: 20.0,),
+              DropdownButtonFormField(
+                items: <DropdownMenuItem<int>>[
+                  DropdownMenuItem(child: Text("Select Time", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
+                  DropdownMenuItem(child: Text(timeFormatting(0800)), value: 0800),
+                  DropdownMenuItem(child: Text(timeFormatting(1000)), value: 1000),
+                  DropdownMenuItem(child: Text(timeFormatting(1400)), value: 1400),
+                  DropdownMenuItem(child: Text(timeFormatting(1600)), value: 1600),
+                ],
+                value: _dropdownvaluenew,
+                validator: (val) => val==0000 ? 'Please choose a time.' : null,
+                decoration: InputDecoration(
+                  fillColor: Colors.white,
+                  filled: true,
+                  enabledBorder: OutlineInputBorder(  // border style for enabled input fields
+                    borderSide: BorderSide(color:Colors.white, width:2.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color:Color.fromRGBO(134,148,133,1), width:2.0),
+                  )
+                ),
+                onChanged: (int? newValue){
+                  setState(() {
+                    _dropdownvaluenew = newValue!;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: _selectedDate,  
+      lastDate: DateTime(2025),
+      helpText: 'SELECT BOOKING DATE',
+      selectableDayPredicate: (DateTime val) => val.weekday == 7 ? false : true,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark(),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
   }
   
   Future getTimeSlots() async {

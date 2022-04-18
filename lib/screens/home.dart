@@ -21,6 +21,8 @@ class _HomeState extends State<Home> {
 
   final AuthService _auth = AuthService();
 
+  String? _type = '😁';
+
   Future getCurrentUserData() async {
     UserModel user = await UserService().getCurrentUserData();
     if(mounted){
@@ -39,61 +41,221 @@ class _HomeState extends State<Home> {
       child: Scaffold(
         backgroundColor: Color.fromRGBO(240,240,235,1.0),
         body: SafeArea(
-          child: Column(
-            children: <Widget>[
-              UserList(),
-              Column(
-                children: [
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
+          child: SingleChildScrollView(
+            child: Column(
+              children: <Widget>[
+                // UserList(),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right:8.0),
                           child: TextButton.icon(
-                            onPressed: () {
-                              // Navigator.pushNamed(context, '/home');
+                            onPressed: () async {
+                              await _auth.signOut();
                             }, 
                             icon: Icon(
-                              Icons.home_rounded,
-                              color: Colors.black,
-                            ),
+                              Icons.person_remove_rounded,
+                              color: Colors.red[600],
+                            ), 
                             label: Text(
-                              'Home screen',
+                              'Logout',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: Colors.red[600],
                               ),
                             ),
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right:8.0),
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                await _auth.signOut();
-                              }, 
-                              icon: Icon(Icons.person), 
-                              label: Text('Logout')
-                            ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10.0,),
+                Align(
+                  alignment: Alignment.center,
+                  child: displayUserDisplayName(),
+                ),
+                SizedBox(height: 8.0,),
+                Card(
+                  color: Color.fromRGBO(206,209,226,1.0),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(35.0, 15.0, 35.0, 30.0),
+                    child: Column(
+                      children: <Widget>[
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            showDialog<String>(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (BuildContext context) => AlertDialog(
+                                title: Center(
+                                  child: Text(
+                                    'How are you feeling today?',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                    ),
+                                  )
+                                ),
+                                content: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(
+                                        'Choose an emotion:',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      Row(
+                                        children: <Widget>[
+                                          Radio<String>(
+                                            activeColor: Colors.amber[700],
+                                            value: '😁',
+                                            groupValue: _type,
+                                            onChanged: (String? value) {
+                                              setState(() {
+                                                _type = value;
+                                              });
+                                            },
+                                          ),
+                                          Text('😁'),
+                                          SizedBox(width: 25.0),
+                                          Radio<String>(
+                                            activeColor: Colors.amber[700],
+                                            value: '😢',
+                                            groupValue: _type,
+                                            onChanged: (String? value) {
+                                              setState(() {
+                                                _type = value;
+                                              });
+                                            },
+                                          ),
+                                          Text('😢'),
+                                          SizedBox(width: 25.0),
+                                          Radio<String>(
+                                            activeColor: Colors.amber[700],
+                                            value: '😡',
+                                            groupValue: _type,
+                                            onChanged: (String? value) {
+                                              setState(() {
+                                                _type = value;
+                                              });
+                                            },
+                                          ),
+                                          Text('😡'),
+                                        ],
+                                      ),
+                                      SizedBox(height: 30.0,),
+                                      Text(
+                                        'Write a description:',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10.0,),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade200)
+                                        ),
+                                        child: TextFormField(
+                                          minLines: 3,
+                                          keyboardType: TextInputType.multiline,
+                                          maxLines: null,
+                                          decoration: InputDecoration(
+                                            hintText: "Today, I ..."
+                                          ),
+                                          validator: (value) {
+                                            if(value!.isEmpty) {
+                                              return 'Please enter some description.';
+                                            }
+                                          },
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, 'Cancel'),
+                                    child: Opacity(
+                                      opacity: 0.8,
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context, 'Confirm');
+
+                                      final snackBar = SnackBar(
+                                        content: Text('Checked in successfully!'),
+                                        action: SnackBarAction(
+                                          label: 'Close',
+                                          onPressed: () {},
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                                    },
+                                    child: Text(
+                                      'Confirm',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }, 
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+                          ),
+                          icon: Icon(Icons.check_circle_outline_rounded,), 
+                          label: Text('Check In',),
+                        ),
+                        SizedBox(height: 15.0,),
+                        Text(
+                          'You have been drug-free for:',
+                          style: TextStyle(
+                            fontSize: 17,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10.0, 0, 10.0, 0),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: displayUserDisplayName(),
+                        SizedBox(height: 10.0,),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 250.0,
+                              height: 250.0,
+                              decoration: ShapeDecoration(
+                                shape: CircleBorder(
+                                  side: BorderSide(width: 10, color: Colors.teal.shade500),
+                                ),
+                              )
+                            ),
+                            Text(
+                              '23\nDays',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 35,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -104,13 +266,116 @@ class _HomeState extends State<Home> {
     return Text(
       ( _currentUser.displayName != null ? 
         ( _currentUser.type == 'T' ? 
-          ('Hi Dr. ' + _currentUser.displayName! + '!') 
-          : ('Hi ' + _currentUser.displayName! + '!') ) 
+          ('Hi, Dr. ' + _currentUser.displayName! + '!') 
+          : ('Hi, ' + _currentUser.displayName! + '!') ) 
         : 'Hi!' ),
       style: TextStyle(
         fontSize: 20,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
   
+}
+
+final _formKey = GlobalKey<FormState>();
+class Mood extends StatelessWidget {
+  const Mood({ Key? key }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color.fromRGBO(240, 240, 235, 1.0),
+      appBar: AppBar(
+        title: Text('Add New Time Slot'),
+        backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+      ),
+      body: Container(
+        padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 20.0),
+              // Email text field:
+              
+              SizedBox(height: 20.0),
+              
+              SizedBox(height: 20.0),
+              
+              
+              SizedBox(height: 30.0),
+              ElevatedButton(
+                onPressed: () async {
+                  // Navigator.of(context).pop();
+                  if (_formKey.currentState!.validate()) {
+                    showDialog<String>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) => AlertDialog(
+                        title: Icon(
+                          Icons.event_available_rounded,
+                          size: 50,
+                          color: Colors.green.shade600,
+                        ),
+                        content: Text(
+                          'Are you sure you want to add this new time slot?',
+                          style: TextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'Cancel'),
+                            child: Opacity(
+                              opacity: 0.8,
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, 'Confirm');
+
+                              final snackBar = SnackBar(
+                                content: Text('Time slot added successfully!'),
+                                action: SnackBarAction(
+                                  label: 'Close',
+                                  onPressed: () {},
+                                ),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                            },
+                            child: Text(
+                              'Confirm',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                }, 
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('Add Time Slot'),
+                ),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
+                  textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+                ),
+              ),
+            ],
+          ),
+        )
+      )
+    );
+  }
 }
