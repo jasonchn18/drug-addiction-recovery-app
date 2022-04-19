@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -53,8 +53,59 @@ class _HomeState extends State<Home> {
                         child: Padding(
                           padding: const EdgeInsets.only(right:8.0),
                           child: TextButton.icon(
-                            onPressed: () async {
-                              await _auth.signOut();
+                            onPressed: () {
+                              showDialog<String>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: 50,
+                                    color: Colors.red.shade600,
+                                  ),
+                                  content: Text(
+                                    'Do you want to logout?',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, 'No'),
+                                      child: Text(
+                                        'No',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context, 'Yes');
+
+                                        final snackBar = SnackBar(
+                                          content: Text('Logged out successfully.'),
+                                          action: SnackBarAction(
+                                            label: 'Close',
+                                            onPressed: () {},
+                                          ),
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                                        await _auth.signOut();
+                                      },
+                                      child: Text(
+                                        'Yes',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
                             }, 
                             icon: Icon(
                               Icons.person_rounded,
@@ -243,13 +294,26 @@ class _HomeState extends State<Home> {
                                 ),
                               )
                             ),
-                            Text(
-                              '23\nDays',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 35,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Column(
+                              children: <Widget>[
+                                Text(
+                                  '23',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 60,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Days',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 35,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -269,8 +333,9 @@ class _HomeState extends State<Home> {
     return Text(
       ( _currentUser.displayName != null ? 
         ( _currentUser.type == 'T' ? 
-          ('Hi, Dr. ' + _currentUser.displayName! + '!') 
-          : ('Hi, ' + _currentUser.displayName! + '!') ) 
+          ('Hi, Dr. ' + _currentUser.displayName!) 
+          : ('Hi, ' + _currentUser.displayName!) 
+        ) 
         : 'Hi!' ),
       style: TextStyle(
         fontSize: 20,
@@ -281,104 +346,104 @@ class _HomeState extends State<Home> {
   
 }
 
-final _formKey = GlobalKey<FormState>();
-class Mood extends StatelessWidget {
-  const Mood({ Key? key }) : super(key: key);
+// final _formKey = GlobalKey<FormState>();
+// class Mood extends StatelessWidget {
+//   const Mood({ Key? key }) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color.fromRGBO(240, 240, 235, 1.0),
-      appBar: AppBar(
-        title: Text('Add New Time Slot'),
-        backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
-      ),
-      body: Container(
-        padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 20.0),
-              // Email text field:
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Color.fromRGBO(240, 240, 235, 1.0),
+//       appBar: AppBar(
+//         title: Text('Add New Time Slot'),
+//         backgroundColor: Color.fromRGBO(4, 98, 126, 0.8),
+//       ),
+//       body: Container(
+//         padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0),
+//         child: Form(
+//           key: _formKey,
+//           child: Column(
+//             children: <Widget>[
+//               SizedBox(height: 20.0),
+//               // Email text field:
               
-              SizedBox(height: 20.0),
+//               SizedBox(height: 20.0),
               
-              SizedBox(height: 20.0),
+//               SizedBox(height: 20.0),
               
               
-              SizedBox(height: 30.0),
-              ElevatedButton(
-                onPressed: () async {
-                  // Navigator.of(context).pop();
-                  if (_formKey.currentState!.validate()) {
-                    showDialog<String>(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (BuildContext context) => AlertDialog(
-                        title: Icon(
-                          Icons.event_available_rounded,
-                          size: 50,
-                          color: Colors.green.shade600,
-                        ),
-                        content: Text(
-                          'Are you sure you want to add this new time slot?',
-                          style: TextStyle(
-                            fontSize: 20,
-                          ),
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, 'Cancel'),
-                            child: Opacity(
-                              opacity: 0.8,
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, 'Confirm');
+//               SizedBox(height: 30.0),
+//               ElevatedButton(
+//                 onPressed: () async {
+//                   // Navigator.of(context).pop();
+//                   if (_formKey.currentState!.validate()) {
+//                     showDialog<String>(
+//                       context: context,
+//                       barrierDismissible: false,
+//                       builder: (BuildContext context) => AlertDialog(
+//                         title: Icon(
+//                           Icons.event_available_rounded,
+//                           size: 50,
+//                           color: Colors.green.shade600,
+//                         ),
+//                         content: Text(
+//                           'Are you sure you want to add this new time slot?',
+//                           style: TextStyle(
+//                             fontSize: 20,
+//                           ),
+//                         ),
+//                         actions: <Widget>[
+//                           TextButton(
+//                             onPressed: () => Navigator.pop(context, 'Cancel'),
+//                             child: Opacity(
+//                               opacity: 0.8,
+//                               child: Text(
+//                                 'Cancel',
+//                                 style: TextStyle(
+//                                   fontSize: 16,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                           TextButton(
+//                             onPressed: () {
+//                               Navigator.pop(context, 'Confirm');
 
-                              final snackBar = SnackBar(
-                                content: Text('Time slot added successfully!'),
-                                action: SnackBarAction(
-                                  label: 'Close',
-                                  onPressed: () {},
-                                ),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                            },
-                            child: Text(
-                              'Confirm',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                }, 
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('Add Time Slot'),
-                ),
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
-                  textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
-                ),
-              ),
-            ],
-          ),
-        )
-      )
-    );
-  }
-}
+//                               final snackBar = SnackBar(
+//                                 content: Text('Time slot added successfully!'),
+//                                 action: SnackBarAction(
+//                                   label: 'Close',
+//                                   onPressed: () {},
+//                                 ),
+//                               );
+//                               ScaffoldMessenger.of(context).showSnackBar(snackBar);
+//                             },
+//                             child: Text(
+//                               'Confirm',
+//                               style: TextStyle(
+//                                 fontSize: 17,
+//                                 fontWeight: FontWeight.bold,
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     );
+//                   }
+//                 }, 
+//                 child: Padding(
+//                   padding: const EdgeInsets.all(8.0),
+//                   child: Text('Add Time Slot'),
+//                 ),
+//                 style: ButtonStyle(
+//                   backgroundColor: MaterialStateProperty.all(Colors.amber[800]),
+//                   textStyle: MaterialStateProperty.all(TextStyle(color:Colors.white))
+//                 ),
+//               ),
+//             ],
+//           ),
+//         )
+//       )
+//     );
+//   }
+// }

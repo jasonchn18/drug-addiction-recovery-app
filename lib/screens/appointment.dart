@@ -45,7 +45,8 @@ class _AppointmentState extends State<Appointment> {
   
   List<UserModel> _therapistList = [];
   List<TimeSlotModel> _timeSlotList = [];
-  List<TimeSlotModel> _appointmentList = [];
+  // List<TimeSlotModel> _appointmentList = [];
+  List<AppointmentModel> _appointmentList = [];
   List<String> _displayNameList = [];
   List _therapistLocationList = [];
   String _chosenTherapistDisplayName = "";
@@ -53,7 +54,7 @@ class _AppointmentState extends State<Appointment> {
   String _chosenTimeSlotDay = "";
   int _chosenTimeSlotTime = 0;
 
-  final DateFormat dateFormatter = DateFormat('dd-MM-yyyy');
+  final DateFormat dateFormatter = DateFormat('dd MMM, yyyy');
   DateTime _selectedDate = DateTime.now().toLocal();
   int _timeDropDownValue = 0000;
 
@@ -87,9 +88,23 @@ class _AppointmentState extends State<Appointment> {
       getTherapistLocations();
       return outputForPatient();
     }
-    else {  //_currentUser.type == 'T'
+    else if(_currentUser.type == 'T') {  //_currentUser.type == 'T'
       getAllTimeSlots();
       return outputForTherapist();
+    }
+    else {
+      return SafeArea(
+        child: Scaffold(
+          resizeToAvoidBottomInset: true,
+          backgroundColor: Color.fromRGBO(240,240,235,1.0),
+          body: Column(
+            children: [
+              SizedBox(height: 25),
+              header(),
+            ],
+          ),
+        ),
+      );
     }
   }
 
@@ -160,8 +175,11 @@ class _AppointmentState extends State<Appointment> {
         }
       }
     }
-    else {  //_currentUser.type == 'T'
+    else if(_currentUser.type == 'T') {
       return 'Your Appointment(s):';
+    }
+    else {
+      return 'Loading...';
     }
   }
 
@@ -1003,9 +1021,12 @@ class _AppointmentState extends State<Appointment> {
     await TimeSlotService().bookTimeSlot(_chosenTherapistEmail, _chosenTimeSlotDay, _chosenTimeSlotTime, _chosenAppointmentMode);
   }
 
+  // Function for patient or therapist to get their appointments list
   Future getAppointmentList() async {
-    List<TimeSlotModel> appointmentList = [];
-    appointmentList = await TimeSlotService().getAppointmentList(_currentUser.type);
+    // List<TimeSlotModel> appointmentList = [];
+    List<AppointmentModel> appointmentList = [];
+    // appointmentList = await TimeSlotService().getAppointmentList(_currentUser.type);
+    appointmentList = await AppointmentService().getAppointmentList(_currentUser.type);
     
     if (mounted) {
       setState(() {
@@ -1015,12 +1036,15 @@ class _AppointmentState extends State<Appointment> {
   }
 
   // Returns the Patient's Appointment List widget
-  Widget patientAppointmentList(List<TimeSlotModel> appointments) {
+  Widget patientAppointmentList(List<AppointmentModel> appointments) {
     if(_appointmentList.isNotEmpty) {
       List<Widget> list = <Widget>[];
 
       appointments.asMap().forEach((index, data) {
-        String time = timeFormatting(data.time);
+        String dateTime = data.date!.toDate().toLocal().toString(); // get date in 'yyyy-MM-dd hh:mm:ss.ms' format
+        String timeOnly = dateTime.split(' ')[1]; // get time in 'hh:mm:ss.ms' format
+        String hourMinOnly = timeOnly.split(':')[0] + timeOnly.split(':')[1];  // get just the hour and min in 'hhmm' (24H) format
+        String time = timeFormatting(int.parse(hourMinOnly));
         if (_displayNameList.length == _appointmentList.length) {
           list.add(Card(
             child: Padding(
@@ -1038,7 +1062,7 @@ class _AppointmentState extends State<Appointment> {
                       ),
                     ),
                     subtitle: Text(
-                      data.day!.substring(2) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
+                      dateFormatter.format(data.date!.toDate().toLocal()) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
                       style: TextStyle(
                         fontSize: 18,
                       ),
@@ -1092,7 +1116,7 @@ class _AppointmentState extends State<Appointment> {
                                         });
                                       }
 
-                                      cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                      // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                     },
                                     child: Text(
                                       'Confirm',
@@ -1160,12 +1184,15 @@ class _AppointmentState extends State<Appointment> {
   }
 
   // Returns the Therapist's Appointments List widget
-  Widget therapistAppointmentList(List<TimeSlotModel> appointments) {
+  Widget therapistAppointmentList(List<AppointmentModel> appointments) {
     if(_appointmentList.isNotEmpty) {
       List<Widget> list = <Widget>[];
 
       appointments.asMap().forEach((index, data) {
-        String time = timeFormatting(data.time);
+        String dateTime = data.date!.toDate().toLocal().toString(); // get date in 'yyyy-MM-dd hh:mm:ss.ms' format
+        String timeOnly = dateTime.split(' ')[1]; // get time in 'hh:mm:ss.ms' format
+        String hourMinOnly = timeOnly.split(':')[0] + timeOnly.split(':')[1];  // get just the hour and min in 'hhmm' (24H) format
+        String time = timeFormatting(int.parse(hourMinOnly));
         if (_displayNameList.length == _appointmentList.length) {
           list.add(Card(
             child: Padding(
@@ -1183,7 +1210,7 @@ class _AppointmentState extends State<Appointment> {
                       ),
                     ),
                     subtitle: Text(
-                      data.day!.substring(2) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
+                      dateFormatter.format(data.date!.toDate().toLocal()) + '\n' + time + '\nMode: ' + (data.mode! == 'V' ? 'Virtual' : 'Physical'),
                       style: TextStyle(
                         fontSize: 18,
                       ),
@@ -1231,7 +1258,7 @@ class _AppointmentState extends State<Appointment> {
                                       );
                                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-                                      cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
+                                      // cancelAppointment(data.therapist_email, data.booked_by, data.day, data.time);
                                     },
                                     child: Text(
                                       'Confirm',
@@ -1304,7 +1331,7 @@ class _AppointmentState extends State<Appointment> {
   }
 
   // Function to get display name from email
-  Future getDisplayNameFromEmail(List<TimeSlotModel> appointmentList) async{
+  Future getDisplayNameFromEmail(List<AppointmentModel> appointmentList) async{
     List<String> displayNameList = [];
     if (_currentUser.type == 'P') {
       for (var data in appointmentList) {
