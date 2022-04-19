@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fyp_app/models/appointment_model.dart';
 import 'package:fyp_app/models/therapist_location_model.dart';
 import 'package:fyp_app/models/time_slot_model.dart';
@@ -101,6 +102,13 @@ class _AppointmentState extends State<Appointment> {
             children: [
               SizedBox(height: 25),
               header(),
+              Expanded(
+              // flex: 6,
+              child: SpinKitFadingCircle(
+                color: Color.fromRGBO(4, 98, 126,1.0),
+                size: 50.0,
+              ),
+            ),
             ],
           ),
         ),
@@ -487,7 +495,7 @@ class _AppointmentState extends State<Appointment> {
             SizedBox(height: 25),
             header(),
             Expanded(
-              flex: 6,
+              // flex: 6,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(5, 15, 5, 15),
                 child: therapistAppointmentList(_appointmentList),

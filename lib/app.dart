@@ -44,7 +44,7 @@ class _AppState extends State<App> {
             ),
             BottomNavigationBarItem(
                 icon: Icon(Icons.collections_bookmark_rounded),
-                label: 'Tracking'
+                label: 'Mood Tracking'
             ),
           ],
           // selectedItemColor: Colors.amber[800],

@@ -13,7 +13,7 @@ class Loading extends StatelessWidget {
         child: SpinKitDoubleBounce(
           color: Color.fromRGBO(4, 98, 126,1.0),
           size: 50.0,
-          )
+        ),
       ),
     );
   }

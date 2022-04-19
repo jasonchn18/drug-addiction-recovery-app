@@ -38,4 +38,18 @@ class UserService {
 
     return displayName;
   }
+
+  // Function to update patient's drug-free/sober days
+  Future updateSoberDays(UserModel user) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    QuerySnapshot querySnap = await db.collection('users')
+    .where('email', isEqualTo: user.email)
+    .get();
+
+    QueryDocumentSnapshot doc = querySnap.docs[0];  // Assumption: the query returns only one document
+    DocumentReference docRef = doc.reference;
+    await docRef.update({
+      'sober_days': user.sober_days,
+    });
+  }
 }
