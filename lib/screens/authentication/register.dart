@@ -151,9 +151,6 @@ class _RegisterState extends State<Register> {
                           loading = false;
                         });
                       }
-
-                      print(email);
-                      print(password);
                     }
                   }, 
                   child: Padding(

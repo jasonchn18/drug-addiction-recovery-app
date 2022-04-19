@@ -39,4 +39,19 @@ class AppointmentService {
 
     return appointmentList;
   }
+
+  // Function for patient or therapist to cancel an appointment
+  Future cancelAppointment(AppointmentModel appointment) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    QuerySnapshot querySnap = await db.collection('appointments')
+    .where('therapist_email', isEqualTo: appointment.therapist_email)
+    .where('date', isEqualTo: appointment.date)
+    .where('mode', isEqualTo: appointment.mode)
+    .where('booked_by', isEqualTo: appointment.booked_by)
+    .get();
+
+    QueryDocumentSnapshot doc = querySnap.docs[0];  // Assumption: the query returns only one document
+    DocumentReference docRef = doc.reference;
+    await docRef.delete();
+  }
 }
