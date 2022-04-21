@@ -14,6 +14,7 @@ class DatabaseService {
       'email': email,
       'type': type,   // P-Patient or T-Therapist
       'sober_days': null,
+      'last_checked_in': null,
     });
   }
 

@@ -1,14 +1,14 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, non_constant_identifier_names
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:fyp_app/models/mood_details_model.dart';
 import 'package:fyp_app/models/user_model.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/services/database.dart';
+import 'package:fyp_app/services/mood_services.dart';
 import 'package:fyp_app/services/user_services.dart';
-import 'package:fyp_app/user_list.dart';
 import 'package:provider/provider.dart';
 
 class Home extends StatefulWidget {
@@ -24,8 +24,13 @@ class _HomeState extends State<Home> {
 
   final AuthService _auth = AuthService();
 
-  String? _type = '😁';
+  String? _emoji = '😁';
+  String? _description = '';
   late int sober_days;
+
+  DateTime _now = DateTime.now();
+  // Set Check-In button reset time to 8.00am
+  DateTime _reset = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 8, 0, 0, 0, 0);
 
   Future getCurrentUserData() async {
     UserModel user = await UserService().getCurrentUserData();
@@ -235,141 +240,23 @@ class _HomeState extends State<Home> {
     return Column(
       children: <Widget>[
         ElevatedButton.icon(
-          onPressed: () {
-            showDialog<String>(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) => AlertDialog(
-                title: Center(
-                  child: Text(
-                    'How are you feeling today?',
-                    style: TextStyle(
-                      fontSize: 22,
-                    ),
-                  )
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Choose an emotion:',
-                        style: TextStyle(
-                          fontSize: 20,
-                        ),
-                      ),
-                      Row(
-                        children: <Widget>[
-                          Radio<String>(
-                            activeColor: Colors.amber[700],
-                            value: '😁',
-                            groupValue: _type,
-                            onChanged: (String? value) {
-                              setState(() {
-                                _type = value;
-                              });
-                            },
-                          ),
-                          Text('😁'),
-                          SizedBox(width: 25.0),
-                          Radio<String>(
-                            activeColor: Colors.amber[700],
-                            value: '😢',
-                            groupValue: _type,
-                            onChanged: (String? value) {
-                              setState(() {
-                                _type = value;
-                              });
-                            },
-                          ),
-                          Text('😢'),
-                          SizedBox(width: 25.0),
-                          Radio<String>(
-                            activeColor: Colors.amber[700],
-                            value: '😡',
-                            groupValue: _type,
-                            onChanged: (String? value) {
-                              setState(() {
-                                _type = value;
-                              });
-                            },
-                          ),
-                          Text('😡'),
-                        ],
-                      ),
-                      SizedBox(height: 30.0,),
-                      Text(
-                        'Write a description:',
-                        style: TextStyle(
-                          fontSize: 20,
-                        ),
-                      ),
-                      SizedBox(height: 10.0,),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade200)
-                        ),
-                        child: TextFormField(
-                          minLines: 3,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: null,
-                          decoration: InputDecoration(
-                            hintText: "Today, I ..."
-                          ),
-                          validator: (value) {
-                            if(value!.isEmpty) {
-                              return 'Please enter some description.';
-                            }
-                          },
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, 'Cancel'),
-                    child: Opacity(
-                      opacity: 0.8,
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context, 'Confirm');
-
-                      final snackBar = SnackBar(
-                        content: Text('Checked in successfully!'),
-                        action: SnackBarAction(
-                          label: 'Close',
-                          onPressed: () {},
-                        ),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    },
-                    child: Text(
-                      'Confirm',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }, 
+          onPressed: hasCheckedIn() ? null : ()=> checkInButton(), 
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+            backgroundColor: hasCheckedIn() ? MaterialStateProperty.all<Color>(Colors.teal.shade200) : MaterialStateProperty.all<Color>(Colors.teal.shade600),
+            foregroundColor: hasCheckedIn() ? MaterialStateProperty.all<Color>(Colors.white60) : MaterialStateProperty.all<Color>(Colors.white),
           ),
           icon: Icon(Icons.check_circle_outline_rounded,), 
           label: Text('Check In',),
         ),
+        hasCheckedIn() ? 
+          Text(
+            'You have already checked in today\n(This button resets at 8.00am daily)',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              // fontSize: 14,
+              color: Colors.red[700],
+            ),
+          ) : SizedBox(),
         SizedBox(height: 15.0,),
         Text(
           'You have been sober/drug-free for:',
@@ -382,6 +269,14 @@ class _HomeState extends State<Home> {
         Stack(
           alignment: Alignment.center,
           children: [
+            Container(
+              width: 250.0,
+              height: 250.0,
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(240,240,235,1.0),
+                shape: BoxShape.circle,
+              ),
+            ),
             Container(
               width: 250.0,
               height: 250.0,
@@ -461,6 +356,7 @@ class _HomeState extends State<Home> {
                               ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
                               _currentUser.sober_days = null;
+                              _currentUser.last_checked_in = null;
                               await UserService().updateSoberDays(_currentUser);
                             },
                             child: Text(
@@ -544,8 +440,184 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+  void checkInButton() {
+    showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => AlertDialog(
+        backgroundColor: Color.fromRGBO(240,240,235,1.0),
+        title: Center(
+          child: Text(
+            'How are you feeling today?',
+            style: TextStyle(
+              fontSize: 22,
+            ),
+          )
+        ),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'Choose an emotion:',
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return Row(
+                      children: <Widget>[
+                        Radio<String>(
+                          activeColor: Colors.teal[500],
+                          value: '😊',
+                          groupValue: _emoji,
+                          onChanged: (String? value) {
+                            setState(() {
+                              _emoji = value;
+                            });
+                          },
+                        ),
+                        Text('😊'),
+                        SizedBox(width: 25.0),
+                        Radio<String>(
+                          activeColor: Colors.teal[500],
+                          value: '😢',
+                          groupValue: _emoji,
+                          onChanged: (String? value) {
+                            setState(() {
+                              _emoji = value;
+                            });
+                          },
+                        ),
+                        Text('😢'),
+                        SizedBox(width: 25.0),
+                        Radio<String>(
+                          activeColor: Colors.teal[500],
+                          value: '😡',
+                          groupValue: _emoji,
+                          onChanged: (String? value) {
+                            setState(() {
+                              _emoji = value;
+                            });
+                          },
+                        ),
+                        Text('😡'),
+                      ],
+                    );
+                  }
+                ),
+                SizedBox(height: 30.0,),
+                Text(
+                  'Write a description:',
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                SizedBox(height: 10.0,),
+                TextFormField(
+                  minLines: 3,
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: "Today, I feel ...",
+                    contentPadding: EdgeInsets.all(10.0),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                  ),
+                  validator: (value) {
+                    if(value!.isEmpty) {
+                      return 'Please enter a description';
+                    }
+                  },
+                  onChanged: (String? value) {
+                    setState(() {
+                      _description = value!;
+                    });
+                  },
+                )
+              ],
+            ),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: Opacity(
+              opacity: 0.8,
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (_formKey.currentState!.validate()) {
+                Navigator.pop(context, 'Confirm');
+
+                final snackBar = SnackBar(
+                  content: Text('Checked in successfully!'),
+                  action: SnackBarAction(
+                    label: 'Close',
+                    onPressed: () {},
+                  ),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+                setState(() {
+                  _currentUser.sober_days = _currentUser.sober_days! + 1;
+                });
+                await UserService().updateSoberDays(_currentUser);
+                await checkIn();
+              }
+            },
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future checkIn() async {
+    MoodDetailsModel moodDetails = MoodDetailsModel();
+    moodDetails.date = Timestamp.fromDate(DateTime.now());
+    moodDetails.emoji = _emoji;
+    moodDetails.description = _description;
+
+    await MoodService().checkIn(moodDetails);
+  }
   
+  hasCheckedIn() {
+    if (_currentUser.last_checked_in != null && _reset != null) {
+      DateTime last_checked_in = _currentUser.last_checked_in!.toDate();
+      DateTime reset = _reset;
+      return last_checked_in.year >= reset.year &&
+          last_checked_in.month >= reset.month &&
+          last_checked_in.day >= reset.day &&
+          last_checked_in.hour >= reset.hour &&
+          last_checked_in.minute >= reset.minute &&
+          last_checked_in.second >= reset.second &&
+          last_checked_in.millisecond >= reset.millisecond &&
+          last_checked_in.microsecond >= reset.microsecond;
+    } else {
+      return false;
+    }
+  }
+
 }
+
 
 // final _formKey = GlobalKey<FormState>();
 // class Mood extends StatelessWidget {

@@ -50,6 +50,7 @@ class UserService {
     DocumentReference docRef = doc.reference;
     await docRef.update({
       'sober_days': user.sober_days,
+      'last_checked_in': user.last_checked_in,
     });
   }
 }
