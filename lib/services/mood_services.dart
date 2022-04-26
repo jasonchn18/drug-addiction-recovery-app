@@ -14,9 +14,11 @@ class MoodService {
     await db.collection('moods')
     .where("email", isEqualTo: user!.email)
     .get().then((query) {
-      for (var moodDetail in query.docs[0].get('moodDetails')) {
-        // print(doc.get('moodDetails').runtimeType);
-        moodList.add(MoodDetailsModel.fromMap(moodDetail));
+      if(query.docs.isNotEmpty) {
+        for (var moodDetail in query.docs[0].get('moodDetails')) {
+          // print(doc.get('moodDetails').runtimeType);
+          moodList.add(MoodDetailsModel.fromMap(moodDetail));
+        }
       }
     });
     // print(moodList);

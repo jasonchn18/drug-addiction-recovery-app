@@ -54,4 +54,39 @@ class AppointmentService {
     DocumentReference docRef = doc.reference;
     await docRef.delete();
   }
+
+  // Function to return available time slots for a specific date
+  Future<List<int>> getAvailableTimeSlots(String therapist_email, DateTime selectedDate) async {
+    FirebaseFirestore db = FirebaseFirestore.instance;
+    List<AppointmentModel> appointmentList = [];
+    List<int> availableTimeSlots = [0800, 1000, 1400, 1600];
+    List<int> bookedTimeSlots = [];
+    // print(selectedDate);
+
+    await db.collection('appointments')
+    .where("therapist_email", isEqualTo: therapist_email)
+    // .where("date", isEqualTo: Timestamp.fromDate(selectedDate))
+    .get().then((query) {
+      for (var doc in query.docs) {
+        appointmentList.add(AppointmentModel.fromMap(doc.data()));
+      }
+    });
+
+    for (var data in appointmentList) {
+      // If date from query matches the date selected by patient:
+      if (data.date!.toDate().toLocal().toString().split(' ')[0] == selectedDate.toLocal().toString().split(' ')[0]) {
+        String dateTime = data.date!.toDate().toLocal().toString(); // get date in 'yyyy-MM-dd hh:mm:ss.ms' format
+        String timeOnly = dateTime.split(' ')[1]; // get time in 'hh:mm:ss.ms' format
+        String hourMinOnly = timeOnly.split(':')[0] + timeOnly.split(':')[1];  // get just the hour and min in 'hhmm' (24H) format
+
+        bookedTimeSlots.add(int.parse(hourMinOnly));
+      }
+    }
+
+    for (var data in bookedTimeSlots) {
+      availableTimeSlots.remove(data);
+    }
+    
+    return availableTimeSlots;
+  }
 }

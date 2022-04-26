@@ -2,6 +2,7 @@
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
@@ -56,7 +57,10 @@ class _AppointmentState extends State<Appointment> {
   // int _chosenTimeSlotTime = 0;
 
   final DateFormat dateFormatter = DateFormat('dd MMM, yyyy');
-  DateTime _selectedDate = DateTime.now().toLocal();
+  DateTime _nowDate = DateTime.now().toLocal();
+  late DateTime _initialSelectedDate;
+  late DateTime _selectedDate;
+  List<int> _availableTimeSlots = [0800, 1000, 1400, 1600];
   int _timeDropDownValue = 0000;
 
   void _prevButtonAction() {
@@ -75,9 +79,11 @@ class _AppointmentState extends State<Appointment> {
   void initState() {
     setState(() {
       _chosenAppointmentMode = "V";
-      _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1); // appointment should be made at least 1 day before
+      _selectedDate = DateTime(_nowDate.year, _nowDate.month, _nowDate.day + 1); // appointment should be made at least 1 day before
+      _initialSelectedDate = DateTime(_nowDate.year, _nowDate.month, _nowDate.day + 1); // for setting the first date in the date picker
     });
     super.initState();
+    setupInteractedMessage();
   }
 
   @override
@@ -254,6 +260,10 @@ class _AppointmentState extends State<Appointment> {
           ),
           Expanded(
             child: ElevatedButton(
+              child: Text('Next'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
+              ),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   var newHour;
@@ -267,10 +277,6 @@ class _AppointmentState extends State<Appointment> {
                   _startButtonAction();
                 }
               },
-              child: Text('Next'),
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.teal.shade600),
-              ),
             ),
             flex: 5,
           ),
@@ -699,6 +705,20 @@ class _AppointmentState extends State<Appointment> {
         _selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day + 1);
       });
     }
+
+    getAvailableTimeSlots(_chosenTherapistEmail, _selectedDate);
+
+    List<DropdownMenuItem<int>> timeSlots = [
+      DropdownMenuItem(child: Text("Available Time Slots:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
+      // DropdownMenuItem(child: Text(timeFormatting(0800)), value: 0800),
+      // DropdownMenuItem(child: Text(timeFormatting(1000)), value: 1000),
+      // DropdownMenuItem(child: Text(timeFormatting(1400)), value: 1400),
+      // DropdownMenuItem(child: Text(timeFormatting(1600)), value: 1600),
+    ];
+
+    for (var data in _availableTimeSlots) {
+      timeSlots.add(DropdownMenuItem(child: Text(timeFormatting(data)), value: data));
+    }
     
     return Scaffold(
       backgroundColor: Color.fromRGBO(240,240,235,1.0),
@@ -748,15 +768,9 @@ class _AppointmentState extends State<Appointment> {
                 ),
                 SizedBox(height: 20.0,),
                 DropdownButtonFormField(
-                  items: <DropdownMenuItem<int>>[
-                    DropdownMenuItem(child: Text("Select Time", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)) , value: 0000),
-                    DropdownMenuItem(child: Text(timeFormatting(0800)), value: 0800),
-                    DropdownMenuItem(child: Text(timeFormatting(1000)), value: 1000),
-                    DropdownMenuItem(child: Text(timeFormatting(1400)), value: 1400),
-                    DropdownMenuItem(child: Text(timeFormatting(1600)), value: 1600),
-                  ],
+                  items: timeSlots,
                   value: _timeDropDownValue,
-                  validator: (val) => val==0000 ? 'Please choose a time.' : null,
+                  validator: (val) => val==0000 ? 'Please choose a time slot.' : null,
                   decoration: InputDecoration(
                     fillColor: Colors.white,
                     filled: true,
@@ -785,7 +799,7 @@ class _AppointmentState extends State<Appointment> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: _selectedDate,  
+      firstDate: _initialSelectedDate,  
       lastDate: DateTime(2025),
       helpText: 'SELECT BOOKING DATE',
       selectableDayPredicate: (DateTime val) => val.weekday == 7 ? false : true,
@@ -801,6 +815,41 @@ class _AppointmentState extends State<Appointment> {
       setState(() {
         _selectedDate = picked;
       });
+    }
+  }
+
+  Future getAvailableTimeSlots(String therapist_email, DateTime selectedDate) async {
+    List<int> list = await AppointmentService().getAvailableTimeSlots(therapist_email, selectedDate);
+    if (mounted) {
+      setState(() {
+        _availableTimeSlots = list;
+      });
+    }
+  }
+
+  // It is assumed that all messages contain a data field with the key 'type'
+  Future<void> setupInteractedMessage() async {
+    // Get any messages which caused the application to open from
+    // a terminated state.
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    // If the message also contains a data property with a "type" of "chat",
+    // navigate to a chat screen
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+
+    // Also handle any interaction when the app is in the background via a
+    // Stream listener
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+  
+  void _handleMessage(RemoteMessage message) {
+    if (message.data['type'] == 'chat') {
+      // Navigator.pushNamed(context, '/chat', 
+      //   arguments: ChatArguments(message),
+      // );
     }
   }
   

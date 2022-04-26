@@ -96,12 +96,10 @@ class _LoginState extends State<Login> {
                       dynamic result = await _auth.signInWithEmailAndPassword(email, password);
                       if (result == null) {
                         setState(() {
-                          error = 'Could not sign in with those credentials.';
+                          error = 'Could not login with those credentials.';
                           loading = false;
                         });
                       }
-                      print(email);
-                      print(password);
                     }
                   }, 
                   child: Padding(

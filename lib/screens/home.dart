@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:fyp_app/models/mood_details_model.dart';
 import 'package:fyp_app/models/user_model.dart';
+import 'package:fyp_app/screens/about.dart';
 import 'package:fyp_app/services/auth.dart';
 import 'package:fyp_app/services/database.dart';
 import 'package:fyp_app/services/mood_services.dart';
@@ -56,12 +57,43 @@ class _HomeState extends State<Home> {
                 // UserList(),
                 Row(
                   children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal:5.0),
+                      child: TextButton.icon(
+                        icon: Icon(
+                          Icons.info_outline_rounded,
+                          color: Colors.black87,
+                        ), 
+                        label: Text(
+                          'About',
+                          style: TextStyle(
+                            color: Colors.black87,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => About()),
+                          );
+                        },
+                      ),
+                    ),
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Padding(
                           padding: const EdgeInsets.only(right:8.0),
                           child: TextButton.icon(
+                            icon: Icon(
+                              Icons.person_rounded,
+                              color: Colors.red[600],
+                            ), 
+                            label: Text(
+                              'Logout',
+                              style: TextStyle(
+                                color: Colors.red[600],
+                              ),
+                            ),
                             onPressed: () {
                               showDialog<String>(
                                 context: context,
@@ -115,17 +147,7 @@ class _HomeState extends State<Home> {
                                   ],
                                 ),
                               );
-                            }, 
-                            icon: Icon(
-                              Icons.person_rounded,
-                              color: Colors.red[600],
-                            ), 
-                            label: Text(
-                              'Logout',
-                              style: TextStyle(
-                                color: Colors.red[600],
-                              ),
-                            ),
+                            },
                           ),
                         ),
                       ),
