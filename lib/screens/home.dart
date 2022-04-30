@@ -29,8 +29,8 @@ class _HomeState extends State<Home> {
   String? _description = '';
   late int sober_days;
 
-  DateTime _now = DateTime.now();
   // Set Check-In button reset time to 8.00am
+  final DateTime _today8AM = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 8, 0, 0, 0, 0);
   DateTime _reset = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day, 8, 0, 0, 0, 0);
 
   Future getCurrentUserData() async {
@@ -44,6 +44,18 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+  // If now is after 8am, set Check-In button reset time to today 8am.
+  if (DateTime.now().isAfter(_today8AM)) {
+    setState(() {
+      _reset = _today8AM;
+    });
+  }
+  // If now is not yet 8am, set Check-In button reset time to yesterday 8am.
+  else {
+    setState(() {
+      _reset = _today8AM.subtract(Duration(days:1));
+    });
+  }
   getCurrentUserData();
     return StreamProvider<QuerySnapshot?>.value(
       value: DatabaseService(uid:'').users,
@@ -262,15 +274,15 @@ class _HomeState extends State<Home> {
     return Column(
       children: <Widget>[
         ElevatedButton.icon(
-          onPressed: hasCheckedIn() ? null : ()=> checkInButton(), 
+          onPressed: hasCheckedInToday() ? null : ()=> checkInButton(), 
           style: ButtonStyle(
-            backgroundColor: hasCheckedIn() ? MaterialStateProperty.all<Color>(Colors.teal.shade200) : MaterialStateProperty.all<Color>(Colors.teal.shade600),
-            foregroundColor: hasCheckedIn() ? MaterialStateProperty.all<Color>(Colors.white60) : MaterialStateProperty.all<Color>(Colors.white),
+            backgroundColor: hasCheckedInToday() ? MaterialStateProperty.all<Color>(Colors.teal.shade200) : MaterialStateProperty.all<Color>(Colors.teal.shade600),
+            foregroundColor: hasCheckedInToday() ? MaterialStateProperty.all<Color>(Colors.white60) : MaterialStateProperty.all<Color>(Colors.white),
           ),
           icon: Icon(Icons.check_circle_outline_rounded,), 
           label: Text('Check In',),
         ),
-        hasCheckedIn() ? 
+        hasCheckedInToday() ? 
           Text(
             'You have already checked in today\n(This button resets at 8.00am daily)',
             textAlign: TextAlign.center,
@@ -621,18 +633,22 @@ class _HomeState extends State<Home> {
     await MoodService().checkIn(moodDetails);
   }
   
-  hasCheckedIn() {
+  // Function to check if user has checked in today, returns true if yes
+  hasCheckedInToday() {
     if (_currentUser.last_checked_in != null && _reset != null) {
       DateTime last_checked_in = _currentUser.last_checked_in!.toDate();
       DateTime reset = _reset;
-      return last_checked_in.year >= reset.year &&
-          last_checked_in.month >= reset.month &&
-          last_checked_in.day >= reset.day &&
-          last_checked_in.hour >= reset.hour &&
-          last_checked_in.minute >= reset.minute &&
-          last_checked_in.second >= reset.second &&
-          last_checked_in.millisecond >= reset.millisecond &&
-          last_checked_in.microsecond >= reset.microsecond;
+      // print('reset: ' + reset.toString());
+      // print('lci: ' + last_checked_in.toString());
+      return last_checked_in.isAfter(reset);  //returns true if last_checked_in datetime is after/later/greater than reset datetime
+      // return last_checked_in.year >= reset.year &&
+      //     last_checked_in.month >= reset.month &&
+      //     last_checked_in.day >= reset.day &&
+      //     last_checked_in.hour >= reset.hour &&
+      //     last_checked_in.minute >= reset.minute &&
+      //     last_checked_in.second >= reset.second &&
+      //     last_checked_in.millisecond >= reset.millisecond &&
+      //     last_checked_in.microsecond >= reset.microsecond;
     } else {
       return false;
     }

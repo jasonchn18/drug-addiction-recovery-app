@@ -71,8 +71,11 @@ class _TrackingState extends State<Tracking> {
         ),
         Expanded(
           flex: 3,
-          child: Center(
-            child: tracking(_moodList),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Center(
+              child: tracking(_moodList),
+            ),
           ),
         ),
       ],
@@ -262,10 +265,10 @@ class _TrackingState extends State<Tracking> {
       }
       
       if (badPoints >= 12) {
-        return Text('You are encouraged to book an appointment with a therapist soon.');
+        return Text('You are encouraged to book an appointment with a therapist soon.', textAlign: TextAlign.center,);
       }
       else {
-        return Text('Everything looks good! No actions needed.');
+        return Text('Everything looks good! No actions needed.', textAlign: TextAlign.center);
       }
     }
     else {
