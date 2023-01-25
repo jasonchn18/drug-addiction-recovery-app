@@ -1,16 +1,37 @@
-# fyp_app
+# Drug Addiction Recovery Management System
 
-A new Flutter project.
+A mobile application built on Flutter with Firebase's Cloud Firestore and Authentication.
 
-## Getting Started
+<br>
+<hr>
 
-This project is a starting point for a Flutter application.
+## Patient Module
 
-A few resources to get you started if this is your first Flutter project:
+### Home
+<img width="914" alt="Home" src="assets/screenshots/patient/home.png" style="margin-bottom: 15px;">
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+### Appointment List
+<img width="180" alt="Appointment List" src="assets/screenshots/patient/appointment_list.png" style="margin-bottom: 15px;">
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Appointment Booking
+<img width="914" alt="Book Appointment 1" src="assets/screenshots/patient/book_appointment_1.png" style="margin-bottom: 5px;">
+
+<img width="914" alt="Book Appointment 2" src="assets/screenshots/patient/book_appointment_2.png" style="margin-bottom: 15px;">
+
+### Cancel Appointment
+<img width="914" alt="Cancel Appointment" src="assets/screenshots/patient/cancel_appointment.png" style="margin-bottom: 15px;">
+
+### Mood Tracking
+<img width="180" alt="Mood Tracking" src="assets/screenshots/patient/mood_tracking.png" style="margin-bottom: 15px;">
+
+<br>
+<hr>
+
+## Therapist Module
+
+### Appointment List
+<img width="180" alt="Appointment List" src="assets/screenshots/therapist/appointment_list.png" style="margin-bottom: 15px;">
+
+
+### Cancel Appointment
+<img width="914" alt="Cancel Appointment" src="assets/screenshots/therapist/cancel_appointment.png" style="margin-bottom: 15px;">
